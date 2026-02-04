@@ -1,0 +1,20 @@
+{
+  "name": "claude-code-expert",
+  "version": "1.0.0",
+  "description": "Expert advisor that helps you decide and create the right Claude Code automation (skills, hooks, subagents, permissions, etc.)",
+  "author": "elmisi",
+  "license": "MIT",
+  "repository": "https://github.com/elmisi/claude-code-expert",
+  "keywords": [
+    "claude-code",
+    "automation",
+    "skills",
+    "hooks",
+    "subagents",
+    "configuration",
+    "wizard"
+  ],
+  "skills": [
+    "skills/setup-automation"
+  ]
+}
