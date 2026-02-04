@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Valid custom commands configuration for Claude Code",
+  "location": {
+    "project": ".claude/settings.json",
+    "global": "~/.claude/settings.json"
+  },
+  "structure": {
+    "customCommands": {
+      "command-name": "prompt text"
+    }
+  },
+  "limitations": {
+    "description": "Custom commands are simple shortcuts",
+    "items": [
+      "No parameters supported (use skills for parameterized workflows)",
+      "Single-line prompts only",
+      "Just text replacement, no logic"
+    ]
+  },
+  "whenToUse": {
+    "good": [
+      "Frequent single prompts you repeat often",
+      "Simple shortcuts like /test, /lint, /build"
+    ],
+    "bad": [
+      "Complex workflows (use skills instead)",
+      "Parameterized commands (use skills with $ARGUMENTS)",
+      "Conditional logic (use skills or hooks)"
+    ]
+  },
+  "example": {
+    "customCommands": {
+      "test": "Run all tests and report results",
+      "lint": "Run the linter and fix all auto-fixable issues",
+      "build": "Build the project for production",
+      "status": "Show git status and recent commits"
+    }
+  }
+}

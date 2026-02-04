@@ -1,0 +1,58 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Valid permissions configuration for Claude Code",
+  "location": {
+    "project": ".claude/settings.json",
+    "global": "~/.claude/settings.json"
+  },
+  "structure": {
+    "permissions": {
+      "allow": ["array of allowed tool patterns"],
+      "deny": ["array of denied tool patterns"]
+    }
+  },
+  "patternSyntax": {
+    "description": "Tool patterns use glob-style matching",
+    "format": "ToolName(argument_pattern)",
+    "examples": {
+      "Bash(git commit *)": "Allow git commit with any message",
+      "Bash(git push *)": "Match git push with any arguments",
+      "Bash(npm *)": "Allow all npm commands",
+      "Bash(rm -rf *)": "Match dangerous rm commands",
+      "Edit(*.test.js)": "Match editing test files",
+      "Write(*.md)": "Match writing markdown files"
+    }
+  },
+  "priority": {
+    "description": "Deny rules take precedence over allow rules",
+    "note": "If a command matches both allow and deny, it will be denied"
+  },
+  "limitations": {
+    "description": "Important limitations to know",
+    "items": [
+      "Permissions do NOT work with --dangerously-skip-permissions flag",
+      "For guaranteed blocks with skip-permissions, use Hooks instead",
+      "Permissions are checked at runtime, not at configuration load"
+    ]
+  },
+  "example": {
+    "permissions": {
+      "allow": [
+        "Bash(git add *)",
+        "Bash(git commit *)",
+        "Bash(git status)",
+        "Bash(git diff *)",
+        "Bash(git log *)",
+        "Bash(npm test)",
+        "Bash(npm run *)"
+      ],
+      "deny": [
+        "Bash(git push *)",
+        "Bash(git push)",
+        "Bash(rm -rf *)",
+        "Bash(rm -rf /)",
+        "Bash(sudo *)"
+      ]
+    }
+  }
+}

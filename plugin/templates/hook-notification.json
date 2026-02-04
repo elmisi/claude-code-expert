@@ -1,0 +1,24 @@
+{
+  "_template": {
+    "name": "Desktop Notification Hook",
+    "description": "Send desktop notification when Claude needs attention",
+    "platforms": {
+      "linux": "notify-send 'Claude Code' 'MESSAGE'",
+      "macos": "osascript -e 'display notification \"MESSAGE\" with title \"Claude Code\"'",
+      "windows": "powershell.exe -Command \"[System.Windows.Forms.MessageBox]::Show('MESSAGE', 'Claude Code')\""
+    }
+  },
+  "hooks": {
+    "Notification": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "notify-send 'Claude Code' 'Needs your attention'"
+          }
+        ]
+      }
+    ]
+  }
+}

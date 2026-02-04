@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Valid subagent configuration for Claude Code",
+  "location": {
+    "project": ".claude/agents/[name].md",
+    "global": "~/.claude/agents/[name].md"
+  },
+  "frontmatter": {
+    "required": {
+      "name": {
+        "type": "string",
+        "description": "Agent identifier"
+      },
+      "description": {
+        "type": "string",
+        "description": "Brief description of what the agent does"
+      }
+    },
+    "optional": {
+      "tools": {
+        "type": "string",
+        "description": "Comma-separated list of allowed tools",
+        "validValues": ["Read", "Grep", "Glob", "Bash", "Edit", "Write", "WebFetch", "WebSearch", "Task", "NotebookEdit"],
+        "example": "Read, Grep, Glob, Bash"
+      },
+      "model": {
+        "type": "string",
+        "validValues": ["opus", "sonnet", "haiku"],
+        "default": "sonnet",
+        "description": "Which Claude model to use"
+      }
+    }
+  },
+  "structure": {
+    "description": "YAML frontmatter followed by system prompt",
+    "example": "---\nname: agent-name\ndescription: What this agent does\ntools: Read, Grep, Glob, Bash\nmodel: sonnet\n---\n\nYou are a specialized agent for...\n\n## Instructions\n..."
+  },
+  "invocation": {
+    "description": "How to invoke subagents",
+    "examples": [
+      "Use a subagent to review the code",
+      "Use the [name] agent to analyze security",
+      "Launch a subagent for deep investigation"
+    ]
+  }
+}

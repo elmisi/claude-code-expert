@@ -1,0 +1,34 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Valid skill configuration for Claude Code",
+  "location": {
+    "project": ".claude/skills/[name]/SKILL.md",
+    "global": "~/.claude/skills/[name]/SKILL.md"
+  },
+  "frontmatter": {
+    "required": {
+      "name": {
+        "type": "string",
+        "description": "Skill identifier, used for /skill-name invocation"
+      },
+      "description": {
+        "type": "string",
+        "description": "Brief description of what the skill does"
+      }
+    },
+    "optional": {
+      "disable-model-invocation": {
+        "type": "boolean",
+        "default": false,
+        "description": "If true, skill is only invoked manually via /skill-name. If false (default), Claude may apply it automatically when relevant."
+      }
+    }
+  },
+  "variables": {
+    "$ARGUMENTS": "Replaced with user-provided arguments after /skill-name"
+  },
+  "structure": {
+    "description": "YAML frontmatter followed by markdown content",
+    "example": "---\nname: skill-name\ndescription: What this skill does\ndisable-model-invocation: true\n---\n\n# Skill Content\n\nInstructions here..."
+  }
+}

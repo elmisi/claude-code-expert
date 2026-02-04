@@ -1,0 +1,25 @@
+{
+  "_template": {
+    "name": "Session Start Hook",
+    "description": "Inject context when session starts or resumes",
+    "matchers": {
+      "startup": "New session started",
+      "resume": "Session resumed from previous",
+      "compact": "Session compacted (context was summarized)",
+      "clear": "Session cleared"
+    }
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'Reminder: [YOUR CONTEXT HERE]. Recent commits:' && git log --oneline -3 2>/dev/null || true"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "_template": {
+    "name": "Permissions Configuration",
+    "description": "Control what tools Claude can use",
+    "warning": "Permissions do NOT work with --dangerously-skip-permissions. Use hooks for guaranteed blocks.",
+    "location": ".claude/settings.json or ~/.claude/settings.json"
+  },
+  "permissions": {
+    "allow": [
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git status)",
+      "Bash(git diff *)",
+      "Bash(git log *)"
+    ],
+    "deny": [
+      "Bash(git push *)",
+      "Bash(git push)",
+      "Bash(rm -rf *)"
+    ]
+  }
+}

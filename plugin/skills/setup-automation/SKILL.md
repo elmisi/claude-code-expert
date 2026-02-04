@@ -10,18 +10,29 @@ The user wants to automate: $ARGUMENTS
 
 ---
 
-## Step 0: Update documentation
+## Step 0: Load schemas and check for updates (semi-automatic)
 
-Before proceeding, update your knowledge:
+### 0.1 Load validation schemas
+Read the schema files from this plugin to know what values are valid:
+- `plugin/schemas/hooks.json` - Valid hook events, types, matchers
+- `plugin/schemas/skills.json` - Skill frontmatter requirements
+- `plugin/schemas/subagents.json` - Subagent configuration
+- `plugin/schemas/permissions.json` - Permission patterns
+- `plugin/schemas/custom-commands.json` - Custom command format
 
-1. Fetch the official documentation:
-   - https://code.claude.com/docs/en/best-practices
-   - https://code.claude.com/docs/en/skills
-   - https://code.claude.com/docs/en/hooks-guide
-   - https://code.claude.com/docs/en/sub-agents
-   - https://code.claude.com/docs/en/settings
+**CRITICAL: Only use values listed in these schemas. Never invent event names or fields.**
 
-2. Update `docs/claude-code-reference.md` in the plugin with any relevant updates for choosing between skill, hook, subagent, permissions, CLAUDE.md and custom commands.
+### 0.2 Check for documentation updates
+Fetch the official documentation to check for updates:
+- https://code.claude.com/docs/en/hooks-guide
+- https://code.claude.com/docs/en/skills
+- https://code.claude.com/docs/en/sub-agents
+- https://code.claude.com/docs/en/settings
+
+Compare with `plugin/docs/claude-code-reference.md`. If there are significant differences:
+1. Show the diff to the user
+2. Ask for confirmation before updating
+3. Update schemas if new events/features were added
 
 ---
 
@@ -57,14 +68,14 @@ Based on the answers, use this decision matrix:
 
 | Criterion | Hook | Skill | Skill (manual) | Subagent | Permissions | CLAUDE.md | Custom Cmd |
 |-----------|------|-------|----------------|----------|-------------|-----------|------------|
-| Must happen ALWAYS without exceptions | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Rule about what Claude can/cannot do | ❌ | ❌ | ❌ | ❌ | ✅ | ⚠️ | ❌ |
-| Domain knowledge applied automatically | ❌ | ✅ | ❌ | ❌ | ❌ | ⚠️ | ❌ |
-| Complex workflow invoked manually | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Needs separate/isolated context | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ |
-| Independent review/analysis | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ |
-| Simple global rule | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
-| Shortcut for frequent prompt | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Must happen ALWAYS without exceptions | YES | no | no | no | no | no | no |
+| Rule about what Claude can/cannot do | no | no | no | no | YES | maybe | no |
+| Domain knowledge applied automatically | no | YES | no | no | no | maybe | no |
+| Complex workflow invoked manually | no | no | YES | no | no | no | no |
+| Needs separate/isolated context | no | no | no | YES | no | no | no |
+| Independent review/analysis | no | no | no | YES | no | no | no |
+| Simple global rule | no | no | no | no | no | YES | no |
+| Shortcut for frequent prompt | no | no | no | no | no | no | YES |
 
 ### Common combinations
 
@@ -86,18 +97,35 @@ Ask for confirmation before proceeding.
 
 ---
 
-## Step 4: Create the files
+## Step 4: Create the files with VALIDATION
 
-After confirmation, create the necessary files:
+**CRITICAL: Before creating any file, validate against the schemas.**
 
 ### For Hook
+
+**ONLY use these valid events** (from `schemas/hooks.json`):
+- `SessionStart` - Session begins (matchers: startup, resume, clear, compact)
+- `SessionEnd` - Session ends (matchers: clear, logout, prompt_input_exit, other)
+- `UserPromptSubmit` - When user submits a prompt (no matcher)
+- `PreToolUse` - Before a tool executes (matchers: Bash, Edit, Write, Edit|Write, mcp__.*)
+- `PostToolUse` - After a tool succeeds (same matchers as PreToolUse)
+- `PostToolUseFailure` - After a tool fails
+- `PermissionRequest` - When permission dialog appears
+- `Notification` - When Claude needs attention (matchers: permission_prompt, idle_prompt)
+- `Stop` - When Claude finishes responding (no matcher)
+- `PreCompact` - Before context compaction (matchers: manual, auto)
+- `SubagentStart`, `SubagentStop` - Subagent lifecycle
+
+**NEVER use these (they don't exist):**
+- PreCommit, PostCommit, PreBash, PostBash, PreEdit, PostEdit, BeforeToolUse, AfterToolUse
+
+**Correct structure:**
 ```json
-// .claude/settings.json
 {
   "hooks": {
-    "[EventName]": [
+    "PreToolUse": [
       {
-        "matcher": "[optional_pattern]",
+        "matcher": "Bash",
         "hooks": [
           {
             "type": "command",
@@ -110,89 +138,93 @@ After confirmation, create the necessary files:
 }
 ```
 
-**Valid hook events:**
-- `PreToolUse` - Before a tool executes (can block it). Use matcher like `Bash`, `Edit|Write`, `mcp__.*`
-- `PostToolUse` - After a tool succeeds
-- `PostToolUseFailure` - After a tool fails
-- `UserPromptSubmit` - When user submits a prompt
-- `SessionStart` - Session begins (matcher: `startup`, `resume`, `compact`)
-- `SessionEnd` - Session ends (matcher: `clear`, `logout`)
-- `Notification` - When Claude needs attention
-- `Stop` - When Claude finishes responding
-- `PreCompact` - Before context compaction
-- `SubagentStart`, `SubagentStop` - Subagent lifecycle
+**Exit codes:**
+- Exit 0 = allow the action
+- Exit 2 = block the action (stderr becomes Claude's feedback)
 
-**Example - Block git push:**
-```json
-{
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -q 'git push'; then echo 'Blocked' >&2; exit 2; fi"
-          }
-        ]
-      }
-    ]
-  }
-}
-```
-
-**Note:** Exit code 2 blocks the action. Exit code 0 allows it.
+**Use templates from `plugin/templates/hook-*.json` as a base.**
 
 ### For Skill
-```markdown
-// .claude/skills/[name]/SKILL.md
+
+Location: `.claude/skills/[name]/SKILL.md` (project) or `~/.claude/skills/[name]/SKILL.md` (global)
+
+Required frontmatter:
+```yaml
 ---
-name: [name]
-description: [description]
-disable-model-invocation: [true for manual workflow, false for automatic]
+name: skill-name
+description: What this skill does
+disable-model-invocation: true|false
 ---
-[content]
 ```
+
+Use template from `plugin/templates/skill.md`.
 
 ### For Subagent
-```markdown
-// .claude/agents/[name].md
+
+Location: `.claude/agents/[name].md` (project) or `~/.claude/agents/[name].md` (global)
+
+Required frontmatter:
+```yaml
 ---
-name: [name]
-description: [description]
-tools: [tool list: Read, Grep, Glob, Bash, Edit, Write]
-model: [opus|sonnet|haiku]
+name: agent-name
+description: What this agent does
+tools: Read, Grep, Glob, Bash
+model: sonnet
 ---
-[specialized system prompt]
 ```
 
+Valid tools: Read, Grep, Glob, Bash, Edit, Write, WebFetch, WebSearch, Task, NotebookEdit
+Valid models: opus, sonnet, haiku
+
+Use template from `plugin/templates/subagent.md`.
+
 ### For Permissions
+
+Location: `.claude/settings.json`
+
 ```json
-// .claude/settings.json
 {
   "permissions": {
-    "allow": ["..."],
-    "deny": ["..."]
+    "allow": ["Bash(git commit *)"],
+    "deny": ["Bash(git push *)"]
   }
 }
 ```
 
+**Warning:** Does NOT work with `--dangerously-skip-permissions`. Use Hooks instead for guaranteed blocks.
+
 ### For Custom Command
+
+Location: `.claude/settings.json`
+
 ```json
-// .claude/settings.json
 {
   "customCommands": {
-    "[name]": "[prompt]"
+    "name": "prompt text"
   }
 }
 ```
 
 ### For CLAUDE.md
-Add the rule to the CLAUDE.md file in the project root.
+
+Add the rule to `./CLAUDE.md` (project) or `~/.claude/CLAUDE.md` (global).
 
 ---
 
-## Step 5: Verify and instruct
+## Step 5: Validate before writing
+
+Before creating any configuration file:
+
+1. **For hooks**: Verify event name is in the valid list
+2. **For hooks**: Verify structure has nested `hooks` array with `type` and `command`
+3. **For skills/subagents**: Verify required frontmatter fields
+4. **For subagents**: Verify tools and model are valid
+
+If validation fails, show the error and do NOT create the file.
+
+---
+
+## Step 6: Verify and instruct
 
 After creating:
 1. Show the created files
@@ -208,3 +240,4 @@ After creating:
 - CLAUDE.md instructions are advisory, not guaranteed. If certainty is needed, use Hook.
 - Hooks are scripts, they don't have access to Claude's intelligence. For complex logic, combine Hook + Skill.
 - Subagents consume extra tokens but preserve the main context.
+- Always validate configurations before creating files to prevent errors like the invalid `PreCommit` event.

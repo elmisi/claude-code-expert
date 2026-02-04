@@ -1,0 +1,102 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Valid hook configuration for Claude Code",
+  "validEvents": [
+    "SessionStart",
+    "SessionEnd",
+    "UserPromptSubmit",
+    "PreToolUse",
+    "PostToolUse",
+    "PostToolUseFailure",
+    "PermissionRequest",
+    "Notification",
+    "Stop",
+    "PreCompact",
+    "SubagentStart",
+    "SubagentStop"
+  ],
+  "validTypes": ["command", "prompt", "agent"],
+  "matchersByEvent": {
+    "PreToolUse": {
+      "description": "Tool name pattern",
+      "examples": ["Bash", "Edit", "Write", "Edit|Write", "Read", "Glob", "Grep", "mcp__.*", "mcp__github__.*"]
+    },
+    "PostToolUse": {
+      "description": "Tool name pattern (same as PreToolUse)",
+      "examples": ["Bash", "Edit", "Write", "Edit|Write", "Read", "Glob", "Grep", "mcp__.*"]
+    },
+    "PostToolUseFailure": {
+      "description": "Tool name pattern (same as PreToolUse)",
+      "examples": ["Bash", "Edit", "Write"]
+    },
+    "PermissionRequest": {
+      "description": "Tool name pattern",
+      "examples": ["Bash", "Edit|Write", "mcp__.*"]
+    },
+    "SessionStart": {
+      "description": "How the session started",
+      "validValues": ["startup", "resume", "clear", "compact"]
+    },
+    "SessionEnd": {
+      "description": "Why the session ended",
+      "validValues": ["clear", "logout", "prompt_input_exit", "other"]
+    },
+    "Notification": {
+      "description": "Notification type",
+      "validValues": ["permission_prompt", "idle_prompt", "auth_success", "elicitation_dialog"],
+      "note": "Empty string matches all"
+    },
+    "SubagentStart": {
+      "description": "Agent type",
+      "examples": ["Bash", "Explore", "Plan", "custom-agent-name"]
+    },
+    "SubagentStop": {
+      "description": "Agent type (same as SubagentStart)",
+      "examples": ["Bash", "Explore", "Plan"]
+    },
+    "PreCompact": {
+      "description": "What triggered compaction",
+      "validValues": ["manual", "auto"]
+    },
+    "UserPromptSubmit": {
+      "description": "No matcher support - always fires",
+      "note": "Matcher is ignored for this event"
+    },
+    "Stop": {
+      "description": "No matcher support - always fires",
+      "note": "Matcher is ignored for this event"
+    }
+  },
+  "exitCodes": {
+    "0": "Allow/proceed with the action",
+    "2": "Block the action (stderr becomes Claude's feedback)",
+    "other": "Allow but log error (visible in verbose mode)"
+  },
+  "structure": {
+    "description": "Correct JSON structure for hooks",
+    "example": {
+      "hooks": {
+        "EVENT_NAME": [
+          {
+            "matcher": "optional_pattern",
+            "hooks": [
+              {
+                "type": "command",
+                "command": "your-shell-command"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "environmentVariables": {
+    "CLAUDE_TOOL_INPUT": "JSON string of tool input (for PreToolUse)",
+    "CLAUDE_PROJECT_DIR": "Project directory path",
+    "CLAUDE_SESSION_ID": "Current session ID"
+  },
+  "invalidEvents": {
+    "description": "These event names DO NOT EXIST - never use them",
+    "examples": ["PreCommit", "PostCommit", "PreBash", "PostBash", "PreEdit", "PostEdit", "BeforeToolUse", "AfterToolUse"]
+  }
+}

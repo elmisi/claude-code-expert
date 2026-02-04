@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2025-02-04
+
+### Added
+- Validation schemas in `plugin/schemas/` for hooks, skills, subagents, permissions, custom-commands
+- Ready-to-use templates in `plugin/templates/` for all automation types
+- Validation script `plugin/scripts/validate-config.sh` to check configurations before creation
+- Semi-automatic documentation update workflow with diff preview
+
+### Changed
+- SKILL.md now reads schemas to validate configurations before creating files
+- Documentation explicitly lists invalid hook events to avoid common mistakes
+- Improved error prevention with explicit lists of valid values
+
+### Fixed
+- Test fixture `hook-only.json` corrected from invalid `PreBash` to valid `PreToolUse`
+
 ## [1.2.2] - 2025-02-04
 
 ### Fixed

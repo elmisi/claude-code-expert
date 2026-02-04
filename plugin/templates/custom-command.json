@@ -1,0 +1,18 @@
+{
+  "_template": {
+    "name": "Custom Commands Configuration",
+    "description": "Simple prompt shortcuts",
+    "limitations": [
+      "No parameters (use skills for parameterized workflows)",
+      "Single-line prompts only",
+      "Just text replacement, no logic"
+    ],
+    "location": ".claude/settings.json or ~/.claude/settings.json"
+  },
+  "customCommands": {
+    "test": "Run all tests and report results. If tests fail, analyze the failures.",
+    "lint": "Run the linter and automatically fix any issues that can be fixed.",
+    "build": "Build the project for production and report any errors.",
+    "status": "Show git status, recent commits, and current branch."
+  }
+}

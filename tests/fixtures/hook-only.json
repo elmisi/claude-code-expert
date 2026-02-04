@@ -1,9 +1,14 @@
 {
   "hooks": {
-    "PreBash": [
+    "PreToolUse": [
       {
-        "command": "echo $COMMAND | grep -q 'git push' && echo '⛔ Push blocked - requires explicit authorization' && exit 1 || exit 0",
-        "description": "Block git push without authorization"
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -q 'git push'; then echo 'Push blocked - requires explicit authorization' >&2; exit 2; fi"
+          }
+        ]
       }
     ]
   }

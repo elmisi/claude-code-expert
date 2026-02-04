@@ -1,0 +1,23 @@
+{
+  "_template": {
+    "name": "Block Command Hook",
+    "description": "Block specific bash commands before they execute",
+    "placeholders": {
+      "PATTERN": "The grep pattern to match (e.g., 'git push', 'rm -rf')",
+      "REASON": "The reason shown to Claude when blocked"
+    }
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -q 'PATTERN'; then echo 'Blocked: REASON' >&2; exit 2; fi"
+          }
+        ]
+      }
+    ]
+  }
+}
