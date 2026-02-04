@@ -1,6 +1,6 @@
 {
   "name": "claude-code-expert",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "description": "Expert advisor that helps you decide and create the right Claude Code automation (skills, hooks, subagents, permissions, etc.)",
   "author": {
     "name": "elmisi"

@@ -157,6 +157,24 @@ Arguments: `import <file>`
 
 ---
 
+## ⚠️ CRITICAL RULE: COMPLETE ALL COMPONENTS
+
+**This skill MUST create EVERYTHING it promises. Partial implementations are FORBIDDEN.**
+
+If you decide "Hook + Skill is needed":
+- You MUST create the hook AND the skill
+- You MUST test that both work
+- You MUST NOT finish until both are verified
+
+If ANY component fails:
+- FIX IT before proceeding
+- DO NOT remove it and continue
+- DO NOT leave it for "later"
+
+**An incomplete automation is worse than no automation.**
+
+---
+
 ## Step 0: Load schemas and check for updates
 
 ### 0.1 Load validation schemas
@@ -224,11 +242,23 @@ Based on the answers, use this decision matrix:
 | Simple global rule | no | no | no | no | no | YES | no |
 | Shortcut for frequent prompt | no | no | no | no | no | no | YES |
 
-### Common combinations
+### Common combinations (MUST create ALL components)
 
-- **Hook + Skill**: When it must always happen (hook) but requires complex logic (skill)
-- **Skill + Subagent**: When the skill defines the workflow but needs a subagent for deep analysis
-- **Permissions + CLAUDE.md**: Permissions for technical block, CLAUDE.md to explain why
+**Hook + Skill** - When it must always happen (hook) but requires complex logic (skill)
+- REQUIRED: Hook script in `~/.claude/scripts/`
+- REQUIRED: Hook entry in `settings.json` with VALID event (PreToolUse, PostToolUse, etc.)
+- REQUIRED: Skill file in `~/.claude/skills/[name]/SKILL.md`
+- REQUIRED: Both registered with `relatedHook`/`relatedSkill` links
+
+**Skill + Subagent** - When the skill defines the workflow but needs a subagent for deep analysis
+- REQUIRED: Skill file
+- REQUIRED: Subagent file in `~/.claude/agents/[name].md`
+- REQUIRED: Both registered with links
+
+**Permissions + CLAUDE.md** - Permissions for technical block, CLAUDE.md to explain why
+- REQUIRED: Permission rule in `settings.json`
+- REQUIRED: Rule explanation in `CLAUDE.md`
+- REQUIRED: Both registered
 
 ---
 
@@ -239,6 +269,16 @@ Before creating, explain to the user:
 2. Alternatives considered and why they were discarded
 3. How it will work in practice
 4. Any limitations or considerations
+
+**If the decision involves a COMBINATION (e.g., Hook + Skill), explicitly list ALL components:**
+
+```
+CREATION PLAN:
+[ ] Component 1: Hook (PreToolUse → Bash) - enforces the rule
+[ ] Component 2: Skill (semver) - provides the logic
+```
+
+**CRITICAL: You MUST create ALL components. Do NOT proceed to Step 6 until all boxes are checked.**
 
 Ask for confirmation before proceeding.
 
@@ -416,22 +456,113 @@ If validation fails, show the error and do NOT create the file.
 
 ---
 
-## Step 6: Verify and instruct
+## Step 6: Verify COMPLETENESS
 
-After creating:
-1. Show the created files
-2. Explain how to test/use the automation
-3. Suggest possible future improvements
-4. If it's a skill/subagent, show the command to invoke it
-5. Confirm the automation was added to the registry
+**BEFORE showing results to user, verify ALL planned components were created:**
+
+1. Check your CREATION PLAN from Step 3
+2. For each component:
+   - [ ] File exists at the specified path
+   - [ ] Content is valid (matches schema)
+   - [ ] Registered in automations-registry.json
+
+**If ANY component is missing or invalid:**
+- DO NOT proceed to Step 7
+- GO BACK and create/fix the missing component
+- This is NON-NEGOTIABLE
+
+### Verification checklist for combinations:
+
+**Hook + Skill:**
+- [ ] Skill file exists and has valid frontmatter
+- [ ] Hook script exists and is executable
+- [ ] Hook is registered in settings.json with VALID event (PreToolUse, NOT PreCommit)
+- [ ] Both are in automations-registry.json with `relatedHook`/`relatedSkill` links
+
+**Skill + Subagent:**
+- [ ] Skill file exists
+- [ ] Subagent file exists with valid tools/model
+- [ ] Both registered with links
+
+**Permissions + CLAUDE.md:**
+- [ ] Permission rule in settings.json
+- [ ] Explanation in CLAUDE.md
+- [ ] Both registered
+
+---
+
+## Step 7: Test the automation
+
+**MANDATORY: Test that the automation actually works before finishing.**
+
+### For Hooks:
+```bash
+# Test the hook script directly
+~/.claude/scripts/your-hook.sh "test command"
+echo $?  # Should be 0 (allow) or 2 (block)
+```
+
+If the test fails:
+1. Fix the script
+2. Re-test
+3. DO NOT finish until the test passes
+
+### For Skills:
+- Verify the skill appears in `/skills` list
+- If `disable-model-invocation: false`, verify Claude recognizes when to use it
+
+### For Permissions:
+- Verify the rule appears in settings
+- Test with a matching command
+
+---
+
+## Step 8: Final report
+
+Only after ALL verifications pass:
+
+1. Show the CREATION PLAN with all boxes checked:
+   ```
+   CREATION COMPLETE:
+   [x] Component 1: Hook - ~/.claude/scripts/check-semver.sh
+   [x] Component 2: Skill - ~/.claude/skills/semver/SKILL.md
+   ```
+
+2. Show test results:
+   ```
+   TESTS PASSED:
+   [x] Hook blocks when VERSION not staged (exit 2)
+   [x] Hook allows when VERSION is staged (exit 0)
+   [x] Skill registered and visible
+   ```
+
+3. Explain how to use the automation
+4. Confirm all components are in the registry
+
+**If you cannot complete all steps, explicitly tell the user what failed and why.**
 
 ---
 
 ## Important notes
 
+### NEVER do these things:
+- ❌ Create a hook with invalid event (PreCommit, PostCommit, PreBash, etc.)
+- ❌ Promise "Hook + Skill" but only create the skill
+- ❌ Remove a broken component instead of fixing it
+- ❌ Skip testing and verification
+- ❌ Finish with unchecked items in the CREATION PLAN
+
+### ALWAYS do these things:
+- ✅ Validate against schemas BEFORE creating
+- ✅ Create ALL components of a combination
+- ✅ Test each component works
+- ✅ Register everything in automations-registry.json
+- ✅ Link related components (relatedHook/relatedSkill)
+
+### Technical notes:
 - If the user uses `--dangerously-skip-permissions`, Permissions won't work. Suggest Hook as an alternative for blocks.
 - CLAUDE.md instructions are advisory, not guaranteed. If certainty is needed, use Hook.
 - Hooks are scripts, they don't have access to Claude's intelligence. For complex logic, combine Hook + Skill.
 - Subagents consume extra tokens but preserve the main context.
-- Always validate configurations before creating files to prevent errors like the invalid `PreCommit` event.
+- Valid hook events: SessionStart, SessionEnd, UserPromptSubmit, PreToolUse, PostToolUse, PostToolUseFailure, PermissionRequest, Notification, Stop, PreCompact, SubagentStart, SubagentStop
 - All automations are tracked in `~/.claude/automations-registry.json` for management with list/edit/delete/export/import.

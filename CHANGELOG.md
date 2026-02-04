@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-02-05
+
+### Added
+- Mandatory completion verification for combination automations (Hook + Skill, etc.)
+- Step 6: Verify COMPLETENESS - ensures all planned components are created
+- Step 7: Test the automation - mandatory testing before finishing
+- Step 8: Final report - checklist of all completed components
+- CRITICAL RULE section emphasizing "complete all or nothing"
+
+### Changed
+- Common combinations section now lists REQUIRED components explicitly
+- Important notes split into NEVER/ALWAYS rules for clarity
+- Combinations must have relatedHook/relatedSkill links in registry
+
+### Fixed
+- Prevent incomplete automations (e.g., promising "Hook + Skill" but only creating skill)
+- Prevent removing broken components instead of fixing them
+
 ## [1.4.1] - 2026-02-05
 
 ### Added
