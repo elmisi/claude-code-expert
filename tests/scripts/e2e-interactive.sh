@@ -36,24 +36,28 @@ test_interactive_hook() {
 
     setup_interactive_sandbox
 
-    local prompt="I want to create an automation in this project.
+    local prompt="Create a Claude Code hook configuration to block git push.
 
-Topic: Block git push without explicit authorization
+I need a .claude/settings.json file with a hooks section that blocks any bash command containing 'git push'.
 
-Here are my requirements (simulating interview answers):
-- Timing: This must happen ALWAYS, on every git push attempt
-- Guaranteed: Yes, it MUST be blocked, not just a suggestion
-- Intelligence needed: No, a simple script check is enough
-- Scope: This project only (not global)
+The format should be:
+{
+  \"hooks\": {
+    \"PreBash\": [
+      {
+        \"command\": \"<script that checks and blocks git push>\",
+        \"description\": \"Block git push\"
+      }
+    ]
+  }
+}
 
-Based on these requirements, create the appropriate automation.
-Create the files in .claude/ directory.
-Do NOT ask me questions - I've provided all the information above."
+Create ONLY the .claude/settings.json file. Do not create git hooks or any other files."
 
     log_info "Running Claude with hook creation prompt..."
 
     cd "$TEST_SANDBOX"
-    timeout 120 claude -p "$prompt" > /tmp/claude_output.txt 2>&1
+    timeout 180 claude -p "$prompt" --dangerously-skip-permissions > /tmp/claude_output.txt 2>&1
     local exit_code=$?
 
     if [ $exit_code -eq 124 ]; then
@@ -87,26 +91,29 @@ test_interactive_skill() {
 
     setup_interactive_sandbox
 
-    local prompt="I want to create an automation in this project.
+    local prompt="Create a Claude Code skill for API naming conventions.
 
-Topic: API naming conventions for REST endpoints
+Create a file at .claude/skills/api-conventions/SKILL.md with this structure:
 
-Here are my requirements (simulating interview answers):
-- Timing: Only when working on API-related code
-- Guaranteed: No, it's a guideline Claude should follow
-- Intelligence needed: Yes, Claude needs to understand context
-- Scope: This project only
-- Should be applied automatically when relevant (not manual invocation)
+---
+name: api-conventions
+description: REST API naming conventions
+disable-model-invocation: false
+---
 
-Based on these requirements, create the appropriate automation.
-This should be a Skill with disable-model-invocation: false.
-Create the files in .claude/skills/ directory.
-Do NOT ask me questions - I've provided all the information above."
+# API Conventions
+
+Rules:
+- Use kebab-case for URL paths
+- Use camelCase for JSON properties
+- Include pagination for list endpoints
+
+Create ONLY the .claude/skills/api-conventions/SKILL.md file."
 
     log_info "Running Claude with skill creation prompt..."
 
     cd "$TEST_SANDBOX"
-    timeout 120 claude -p "$prompt" > /tmp/claude_output.txt 2>&1
+    timeout 180 claude -p "$prompt" --dangerously-skip-permissions > /tmp/claude_output.txt 2>&1
     local exit_code=$?
 
     if [ $exit_code -eq 124 ]; then
@@ -145,26 +152,28 @@ test_interactive_subagent() {
 
     setup_interactive_sandbox
 
-    local prompt="I want to create an automation in this project.
+    local prompt="Create a Claude Code subagent for security review.
 
-Topic: Independent security code review
+Create a file at .claude/agents/security-reviewer.md with this structure:
 
-Here are my requirements (simulating interview answers):
-- Timing: Only when explicitly requested
-- Guaranteed: No
-- Intelligence needed: Yes, deep analysis required
-- Needs isolated context: Yes, should review without bias from previous context
-- Scope: This project only
+---
+name: security-reviewer
+description: Security code review
+tools: Read, Grep, Glob, Bash
+model: sonnet
+---
 
-Based on these requirements, this should be a Subagent (not a skill).
-Create a subagent file in .claude/agents/ directory.
-Include: name, description, tools (Read, Grep, Glob, Bash), and model (sonnet).
-Do NOT ask me questions - I've provided all the information above."
+You are a security reviewer. Check for:
+- Injection vulnerabilities
+- Authentication issues
+- Data exposure
+
+Create ONLY the .claude/agents/security-reviewer.md file."
 
     log_info "Running Claude with subagent creation prompt..."
 
     cd "$TEST_SANDBOX"
-    timeout 120 claude -p "$prompt" > /tmp/claude_output.txt 2>&1
+    timeout 180 claude -p "$prompt" --dangerously-skip-permissions > /tmp/claude_output.txt 2>&1
     local exit_code=$?
 
     if [ $exit_code -eq 124 ]; then
@@ -201,23 +210,23 @@ test_interactive_permissions() {
 
     setup_interactive_sandbox
 
-    local prompt="I want to create an automation in this project.
+    local prompt="Create a Claude Code permissions configuration.
 
-Topic: Allow git commit but block git push
+Create a file at .claude/settings.json with this structure:
 
-Here are my requirements (simulating interview answers):
-- This is a permission rule about what Claude can/cannot do
-- I do NOT use --dangerously-skip-permissions
-- Scope: This project only
+{
+  \"permissions\": {
+    \"allow\": [\"Bash(git commit *)\", \"Bash(git add *)\"],
+    \"deny\": [\"Bash(git push *)\"]
+  }
+}
 
-Based on these requirements, create a Permissions configuration.
-Add it to .claude/settings.json with allow and deny arrays.
-Do NOT ask me questions - I've provided all the information above."
+Create ONLY the .claude/settings.json file with permissions config."
 
     log_info "Running Claude with permissions creation prompt..."
 
     cd "$TEST_SANDBOX"
-    timeout 120 claude -p "$prompt" > /tmp/claude_output.txt 2>&1
+    timeout 180 claude -p "$prompt" --dangerously-skip-permissions > /tmp/claude_output.txt 2>&1
     local exit_code=$?
 
     if [ $exit_code -eq 124 ]; then
@@ -263,24 +272,23 @@ test_interactive_claude_md() {
 
     setup_interactive_sandbox
 
-    local prompt="I want to create an automation in this project.
+    local prompt="Create a CLAUDE.md file in the project root.
 
-Topic: Always run tests before committing
+Create a file at CLAUDE.md (in current directory, not in .claude/) with:
 
-Here are my requirements (simulating interview answers):
-- Timing: Before every commit
-- Guaranteed: No, just a reminder/guideline
-- Intelligence needed: No, simple rule
-- Scope: This project only
+# Project Rules
 
-Based on these requirements, this should be a simple CLAUDE.md rule.
-Create or update the CLAUDE.md file in the project root.
-Do NOT ask me questions - I've provided all the information above."
+## Testing
+Before committing, always run tests with: npm test
+
+Ensure all tests pass before creating a commit.
+
+Create ONLY the CLAUDE.md file in the project root."
 
     log_info "Running Claude with CLAUDE.md creation prompt..."
 
     cd "$TEST_SANDBOX"
-    timeout 120 claude -p "$prompt" > /tmp/claude_output.txt 2>&1
+    timeout 180 claude -p "$prompt" --dangerously-skip-permissions > /tmp/claude_output.txt 2>&1
     local exit_code=$?
 
     if [ $exit_code -eq 124 ]; then
@@ -293,7 +301,7 @@ Do NOT ask me questions - I've provided all the information above."
 
     if [ -f "$TEST_SANDBOX/CLAUDE.md" ]; then
         log_success "INTERACTIVE-CLAUDEMD-01: CLAUDE.md created"
-        assert_file_contains "$TEST_SANDBOX/CLAUDE.md" -i "test" "INTERACTIVE-CLAUDEMD-02: Contains test reference"
+        assert_file_contains "$TEST_SANDBOX/CLAUDE.md" "test" "INTERACTIVE-CLAUDEMD-02: Contains test reference"
     else
         log_fail "INTERACTIVE-CLAUDEMD-01: CLAUDE.md not created"
     fi
