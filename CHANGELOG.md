@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-02-04
+
+### Added
+- Test framework with 18 documented test cases
+- Structure tests (fast, no Claude needed)
+- E2E test scaffolding (requires Claude)
+- Test fixtures for all automation types
+- `tests/TEST.md` with detailed test documentation
+- `tests/scripts/run-tests.sh` main test runner
+- `tests/scripts/helpers.sh` test utilities
+
 ## [1.0.3] - 2025-02-04
 
 ### Changed

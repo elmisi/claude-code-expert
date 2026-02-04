@@ -1,0 +1,10 @@
+{
+  "hooks": {
+    "PreBash": [
+      {
+        "command": "echo $COMMAND | grep -q 'git push' && echo '⛔ Push blocked - requires explicit authorization' && exit 1 || exit 0",
+        "description": "Block git push without authorization"
+      }
+    ]
+  }
+}

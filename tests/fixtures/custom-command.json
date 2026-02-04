@@ -1,0 +1,7 @@
+{
+  "customCommands": {
+    "lint": "Run the linter on all files and automatically fix any issues that can be fixed. Report remaining issues.",
+    "test": "Run the test suite and report results. If tests fail, analyze the failures.",
+    "build": "Build the project for production and report any errors or warnings."
+  }
+}
