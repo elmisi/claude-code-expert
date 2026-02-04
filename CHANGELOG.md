@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-02-05
+
+### Added
+- Automation registry system (`~/.claude/automations-registry.json`)
+- Sub-commands for setup-automation skill: `list`, `edit`, `delete`, `export`, `import`
+- File markers (`created-by: setup-automation`) for tracking automation origin
+- Export/import functionality for sharing automations between machines
+
+### Changed
+- setup-automation skill now includes Command Router for sub-command parsing
+- All new automations are automatically tracked in the registry
+
 ## [1.3.0] - 2025-02-04
 
 ### Added

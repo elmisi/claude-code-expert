@@ -6,11 +6,158 @@ disable-model-invocation: true
 
 # Claude Code Expert - Setup Automation
 
-The user wants to automate: $ARGUMENTS
+Arguments: $ARGUMENTS
 
 ---
 
-## Step 0: Load schemas and check for updates (semi-automatic)
+## Command Router
+
+Parse `$ARGUMENTS` to determine the action:
+
+| Pattern | Action |
+|---------|--------|
+| `list` | Go to **List Automations** |
+| `edit <name>` | Go to **Edit Automation** |
+| `delete <name>` | Go to **Delete Automation** |
+| `export [file]` | Go to **Export Automations** |
+| `import <file>` | Go to **Import Automations** |
+| Anything else | Go to **Create New Automation** |
+
+---
+
+# List Automations
+
+Read the registry file: `~/.claude/automations-registry.json`
+
+If it doesn't exist, say:
+> "No automations registry found. Create automations with `/setup-automation <description>` to start tracking."
+
+If it exists, display a table:
+
+```
+┌─────────────────┬────────┬────────┬─────────────────────────────────────┐
+│ Name            │ Type   │ Scope  │ Description                         │
+├─────────────────┼────────┼────────┼─────────────────────────────────────┤
+│ icon-prompt     │ skill  │ global │ Generate prompts for AI image gen.  │
+└─────────────────┴────────┴────────┴─────────────────────────────────────┘
+```
+
+Then use AskUserQuestion to offer actions:
+
+```
+What would you like to do?
+- View details of an automation
+- Edit an automation
+- Delete an automation
+- Export all automations
+- Create a new automation
+- Nothing, just browsing
+```
+
+Handle the selected action accordingly.
+
+---
+
+# Edit Automation
+
+Arguments: `edit <name>`
+
+1. Read the registry to find the automation by name
+2. If not found, show error and list available automations
+3. If found, read the actual file from the path in the registry
+4. Use AskUserQuestion to ask what to change:
+   - Name
+   - Description
+   - Behavior/content
+   - Scope (move from project to global or vice versa)
+5. Make the changes to the file
+6. Update the registry with new `modified` timestamp
+7. Show the diff and confirm
+
+---
+
+# Delete Automation
+
+Arguments: `delete <name>`
+
+1. Read the registry to find the automation by name
+2. If not found, show error and list available automations
+3. If found, show the automation details and ask for confirmation
+4. Use AskUserQuestion with options:
+   - "Yes, delete it"
+   - "No, keep it"
+5. If confirmed:
+   - Delete the file(s) (for skills: entire folder, for hooks: remove from settings.json)
+   - Remove from registry
+   - Show confirmation
+6. If not confirmed, cancel
+
+---
+
+# Export Automations
+
+Arguments: `export [file]`
+
+Default file: `~/.claude/automations-export.json`
+
+1. Read the registry
+2. For each automation, read its content
+3. Create export file:
+
+```json
+{
+  "exportVersion": "1.0",
+  "exportDate": "YYYY-MM-DD",
+  "source": "machine-name or user identifier",
+  "automations": [
+    {
+      "name": "icon-prompt",
+      "type": "skill",
+      "scope": "global",
+      "description": "...",
+      "files": [
+        {
+          "relativePath": "SKILL.md",
+          "content": "--- full file content ---"
+        }
+      ]
+    }
+  ]
+}
+```
+
+4. Write the file
+5. Show summary: "Exported N automations to <file>"
+6. Suggest: "You can import this on another machine with `/setup-automation import <file>`"
+
+---
+
+# Import Automations
+
+Arguments: `import <file>`
+
+1. Read the import file
+2. Validate format (version, required fields)
+3. For each automation in the file:
+   a. Check if it already exists (by name)
+   b. If exists, use AskUserQuestion:
+      - "Overwrite existing"
+      - "Rename to <name>-imported"
+      - "Skip this automation"
+   c. If not exists, show preview and ask confirmation
+4. Create the files in appropriate locations
+5. Add to registry with `created-by: setup-automation` marker
+6. Show summary of imported automations
+
+---
+
+# Create New Automation
+
+(Original workflow - proceed if $ARGUMENTS is not a known command)
+
+---
+
+## Step 0: Load schemas and check for updates
 
 ### 0.1 Load validation schemas
 Read the schema files from this plugin to know what values are valid:
@@ -101,6 +248,49 @@ Ask for confirmation before proceeding.
 
 **CRITICAL: Before creating any file, validate against the schemas.**
 
+### Registry tracking
+
+**Every automation created MUST be registered.**
+
+After creating the files, add to `~/.claude/automations-registry.json`:
+
+```json
+{
+  "id": "unique-id",
+  "name": "automation-name",
+  "type": "skill|hook|subagent|permission|custom-command|claude-md",
+  "scope": "global|project",
+  "path": "path/to/main/file",
+  "created": "ISO-timestamp",
+  "modified": "ISO-timestamp",
+  "description": "what it does"
+}
+```
+
+### File markers
+
+Add `created-by: setup-automation` marker to files:
+
+**For Skills/Subagents (markdown frontmatter):**
+```yaml
+---
+name: skill-name
+description: ...
+created-by: setup-automation
+---
+```
+
+**For JSON configs (hooks, permissions, custom-commands):**
+Add to the specific entry:
+```json
+{
+  "_meta": {
+    "createdBy": "setup-automation",
+    "createdAt": "ISO-timestamp"
+  }
+}
+```
+
 ### For Hook
 
 **ONLY use these valid events** (from `schemas/hooks.json`):
@@ -154,6 +344,7 @@ Required frontmatter:
 name: skill-name
 description: What this skill does
 disable-model-invocation: true|false
+created-by: setup-automation
 ---
 ```
 
@@ -170,6 +361,7 @@ name: agent-name
 description: What this agent does
 tools: Read, Grep, Glob, Bash
 model: sonnet
+created-by: setup-automation
 ---
 ```
 
@@ -231,6 +423,7 @@ After creating:
 2. Explain how to test/use the automation
 3. Suggest possible future improvements
 4. If it's a skill/subagent, show the command to invoke it
+5. Confirm the automation was added to the registry
 
 ---
 
@@ -241,3 +434,4 @@ After creating:
 - Hooks are scripts, they don't have access to Claude's intelligence. For complex logic, combine Hook + Skill.
 - Subagents consume extra tokens but preserve the main context.
 - Always validate configurations before creating files to prevent errors like the invalid `PreCommit` event.
+- All automations are tracked in `~/.claude/automations-registry.json` for management with list/edit/delete/export/import.
