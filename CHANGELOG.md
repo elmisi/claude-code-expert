@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2] - 2025-02-04
+
+### Fixed
+- Corrected hook event names (PreToolUse, PostToolUse, etc. instead of invalid PreCommit)
+- Fixed hook JSON structure (nested `hooks` array with `matcher` and `type`)
+- Updated documentation with valid hook events and correct format
+
 ## [1.2.1] - 2025-02-04
 
 ### Fixed

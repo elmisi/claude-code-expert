@@ -95,17 +95,53 @@ After confirmation, create the necessary files:
 // .claude/settings.json
 {
   "hooks": {
-    "[eventType]": [
+    "[EventName]": [
       {
-        "command": "...",
-        "description": "..."
+        "matcher": "[optional_pattern]",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "your-command-here"
+          }
+        ]
       }
     ]
   }
 }
 ```
 
-Available events: `preBash`, `postBash`, `preEdit`, `postEdit`, `preWrite`, `postWrite`, `beforeCommit`, `afterCommit`
+**Valid hook events:**
+- `PreToolUse` - Before a tool executes (can block it). Use matcher like `Bash`, `Edit|Write`, `mcp__.*`
+- `PostToolUse` - After a tool succeeds
+- `PostToolUseFailure` - After a tool fails
+- `UserPromptSubmit` - When user submits a prompt
+- `SessionStart` - Session begins (matcher: `startup`, `resume`, `compact`)
+- `SessionEnd` - Session ends (matcher: `clear`, `logout`)
+- `Notification` - When Claude needs attention
+- `Stop` - When Claude finishes responding
+- `PreCompact` - Before context compaction
+- `SubagentStart`, `SubagentStop` - Subagent lifecycle
+
+**Example - Block git push:**
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -q 'git push'; then echo 'Blocked' >&2; exit 2; fi"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**Note:** Exit code 2 blocks the action. Exit code 0 allows it.
 
 ### For Skill
 ```markdown

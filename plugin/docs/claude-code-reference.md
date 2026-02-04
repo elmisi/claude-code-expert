@@ -47,25 +47,37 @@ Location: `.claude/settings.json`
 ```json
 {
   "hooks": {
-    "eventType": [
+    "EventName": [
       {
-        "command": "script or command",
-        "description": "what it does"
+        "matcher": "optional_pattern",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "your-command"
+          }
+        ]
       }
     ]
   }
 }
 ```
 
-Event types:
-- `preBash`, `postBash`
-- `preEdit`, `postEdit`
-- `preWrite`, `postWrite`
-- `beforeCommit`, `afterCommit`
+**Valid events:**
+- `PreToolUse` - Before tool executes (can block with exit 2)
+- `PostToolUse` - After tool succeeds
+- `PostToolUseFailure` - After tool fails
+- `UserPromptSubmit` - When user submits prompt
+- `SessionStart` - Session begins (matcher: startup, resume, compact)
+- `SessionEnd` - Session ends
+- `Notification` - Claude needs attention
+- `Stop` - Claude finishes responding
+- `PreCompact` - Before context compaction
+
+**Matchers for PreToolUse/PostToolUse:** `Bash`, `Edit`, `Write`, `Edit|Write`, `mcp__.*`
 
 **Use for**: Actions that MUST happen every time, no exceptions. Deterministic, not advisory.
 
-**Note**: Hooks are scripts, they don't have Claude's intelligence. For complex logic, combine Hook + Skill.
+**Note**: Hooks are scripts. Exit 0 = allow, Exit 2 = block. For complex logic, combine Hook + Skill.
 
 ---
 
