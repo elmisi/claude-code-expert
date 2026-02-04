@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2025-02-04
+
+### Added
+- Interactive E2E tests that run actual Claude commands
+- `tests/scripts/e2e-interactive.sh` for testing real file creation
+- 5 interactive test scenarios (hook, skill, subagent, permissions, CLAUDE.md)
+- `./run-tests.sh interactive` command for token-based tests
+- `./run-tests.sh full` command for complete test suite
+
 ## [1.1.0] - 2025-02-04
 
 ### Added

@@ -2,9 +2,11 @@
 # Main test runner for claude-code-expert
 #
 # Usage:
-#   ./run-tests.sh              # Run all tests
+#   ./run-tests.sh              # Run all tests (structure + e2e)
 #   ./run-tests.sh structure    # Run only structure tests (fast, no Claude)
-#   ./run-tests.sh e2e          # Run only E2E tests (slow, uses Claude)
+#   ./run-tests.sh e2e          # Run only E2E fixture tests (fast)
+#   ./run-tests.sh interactive  # Run interactive E2E tests (slow, uses Claude, costs tokens)
+#   ./run-tests.sh full         # Run all tests including interactive
 #   ./run-tests.sh TEST-01      # Run specific test
 
 # Don't exit on error - we want to continue running tests
@@ -236,6 +238,21 @@ run_specific_test() {
 }
 
 # ============================================
+# INTERACTIVE TESTS (runs actual Claude)
+# ============================================
+run_interactive_tests() {
+    log_section "Interactive E2E Tests"
+    log_info "Running tests that use actual Claude commands..."
+    log_info "This will consume tokens and may take several minutes."
+
+    if [ -x "$SCRIPT_DIR/e2e-interactive.sh" ]; then
+        "$SCRIPT_DIR/e2e-interactive.sh" all
+    else
+        log_fail "e2e-interactive.sh not found or not executable"
+    fi
+}
+
+# ============================================
 # MAIN
 # ============================================
 main() {
@@ -250,11 +267,19 @@ main() {
         e2e)
             run_e2e_tests
             ;;
+        interactive)
+            run_interactive_tests
+            ;;
+        full)
+            run_structure_tests
+            run_e2e_tests
+            run_interactive_tests
+            ;;
         TEST-*|STRUCT-*)
             run_specific_test "$TEST_TYPE"
             ;;
         *)
-            echo "Usage: $0 [all|structure|e2e|TEST-XX]"
+            echo "Usage: $0 [all|structure|e2e|interactive|full|TEST-XX]"
             exit 1
             ;;
     esac
