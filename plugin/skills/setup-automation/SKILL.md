@@ -6,91 +6,91 @@ disable-model-invocation: true
 
 # Claude Code Expert - Setup Automation
 
-L'utente vuole automatizzare: $ARGUMENTS
+The user wants to automate: $ARGUMENTS
 
 ---
 
-## Step 0: Aggiornamento documentazione
+## Step 0: Update documentation
 
-Prima di procedere, aggiorna la tua conoscenza:
+Before proceeding, update your knowledge:
 
-1. Fetch la documentazione ufficiale:
+1. Fetch the official documentation:
    - https://code.claude.com/docs/en/best-practices
    - https://code.claude.com/docs/en/skills
    - https://code.claude.com/docs/en/hooks-guide
    - https://code.claude.com/docs/en/sub-agents
    - https://code.claude.com/docs/en/settings
 
-2. Aggiorna `docs/claude-code-reference.md` nel plugin con eventuali novità rilevanti per la scelta tra skill, hook, subagent, permissions, CLAUDE.md e custom commands.
+2. Update `docs/claude-code-reference.md` in the plugin with any relevant updates for choosing between skill, hook, subagent, permissions, CLAUDE.md and custom commands.
 
 ---
 
-## Step 1: Intervista approfondita
+## Step 1: In-depth interview
 
-Usa AskUserQuestion per chiarire il caso d'uso. Fai domande specifiche:
+Use AskUserQuestion to clarify the use case. Ask specific questions:
 
-### Timing e frequenza
-- Quando deve succedere questa automazione?
-  - Sempre, ad ogni azione specifica (es. ogni commit, ogni edit)
-  - Solo in certi contesti (es. solo per progetti TUI)
-  - Solo su richiesta esplicita dell'utente
+### Timing and frequency
+- When should this automation happen?
+  - Always, on every specific action (e.g., every commit, every edit)
+  - Only in certain contexts (e.g., only for TUI projects)
+  - Only on explicit user request
 
-### Natura dell'automazione
-- Deve essere garantito/deterministico (DEVE succedere) o è una linea guida (DOVREBBE succedere)?
-- Serve intelligenza/decisioni di Claude o basta eseguire uno script/comando?
-- Può fallire silenziosamente o deve bloccare l'operazione?
+### Nature of automation
+- Must it be guaranteed/deterministic (MUST happen) or is it a guideline (SHOULD happen)?
+- Does it need Claude's intelligence/decisions or can a script/command suffice?
+- Can it fail silently or must it block the operation?
 
 ### Scope
-- Si applica a tutti i progetti o solo a questo?
-- Si applica a tutto il progetto o solo a certi tipi di file/lavoro?
-- Altri sviluppatori del team devono seguire la stessa regola?
+- Does it apply to all projects or just this one?
+- Does it apply to the whole project or only certain types of files/work?
+- Should other team developers follow the same rule?
 
 ### Input/Output
-- Servono parametri/argomenti?
-- Deve produrre file, output, o modificare configurazioni?
+- Are parameters/arguments needed?
+- Should it produce files, output, or modify configurations?
 
 ---
 
-## Step 2: Analisi e decisione
+## Step 2: Analysis and decision
 
-Basandoti sulle risposte, usa questa matrice decisionale:
+Based on the answers, use this decision matrix:
 
-| Criterio | Hook | Skill | Skill (manual) | Subagent | Permissions | CLAUDE.md | Custom Cmd |
-|----------|------|-------|----------------|----------|-------------|-----------|------------|
-| Deve succedere SEMPRE senza eccezioni | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| È una regola su cosa Claude può/non può fare | ❌ | ❌ | ❌ | ❌ | ✅ | ⚠️ | ❌ |
-| Conoscenza di dominio applicata automaticamente | ❌ | ✅ | ❌ | ❌ | ❌ | ⚠️ | ❌ |
-| Workflow complesso da invocare manualmente | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Serve contesto separato/isolato | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ |
-| Review/analisi indipendente | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ |
-| Regola semplice globale | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
-| Shortcut per prompt frequente | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Criterion | Hook | Skill | Skill (manual) | Subagent | Permissions | CLAUDE.md | Custom Cmd |
+|-----------|------|-------|----------------|----------|-------------|-----------|------------|
+| Must happen ALWAYS without exceptions | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Rule about what Claude can/cannot do | ❌ | ❌ | ❌ | ❌ | ✅ | ⚠️ | ❌ |
+| Domain knowledge applied automatically | ❌ | ✅ | ❌ | ❌ | ❌ | ⚠️ | ❌ |
+| Complex workflow invoked manually | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Needs separate/isolated context | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ |
+| Independent review/analysis | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ | ❌ |
+| Simple global rule | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ❌ |
+| Shortcut for frequent prompt | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
 
-### Combinazioni comuni
+### Common combinations
 
-- **Hook + Skill**: Quando deve succedere sempre (hook) ma richiede logica complessa (skill)
-- **Skill + Subagent**: Quando la skill definisce il workflow ma serve un subagent per analisi approfondite
-- **Permissions + CLAUDE.md**: Permissions per blocco tecnico, CLAUDE.md per spiegare il perché
-
----
-
-## Step 3: Spiega la decisione
-
-Prima di creare, spiega all'utente:
-1. Cosa hai deciso di creare e perché
-2. Alternative considerate e perché scartate
-3. Come funzionerà in pratica
-4. Eventuali limitazioni o considerazioni
-
-Chiedi conferma prima di procedere.
+- **Hook + Skill**: When it must always happen (hook) but requires complex logic (skill)
+- **Skill + Subagent**: When the skill defines the workflow but needs a subagent for deep analysis
+- **Permissions + CLAUDE.md**: Permissions for technical block, CLAUDE.md to explain why
 
 ---
 
-## Step 4: Crea i file
+## Step 3: Explain the decision
 
-Dopo conferma, crea i file necessari:
+Before creating, explain to the user:
+1. What you decided to create and why
+2. Alternatives considered and why they were discarded
+3. How it will work in practice
+4. Any limitations or considerations
 
-### Per Hook
+Ask for confirmation before proceeding.
+
+---
+
+## Step 4: Create the files
+
+After confirmation, create the necessary files:
+
+### For Hook
 ```json
 // .claude/settings.json
 {
@@ -105,32 +105,32 @@ Dopo conferma, crea i file necessari:
 }
 ```
 
-Eventi disponibili: `preBash`, `postBash`, `preEdit`, `postEdit`, `preWrite`, `postWrite`, `beforeCommit`, `afterCommit`
+Available events: `preBash`, `postBash`, `preEdit`, `postEdit`, `preWrite`, `postWrite`, `beforeCommit`, `afterCommit`
 
-### Per Skill
+### For Skill
 ```markdown
-// .claude/skills/[nome]/SKILL.md
+// .claude/skills/[name]/SKILL.md
 ---
-name: [nome]
-description: [descrizione]
-disable-model-invocation: [true se workflow manuale, false se automatico]
+name: [name]
+description: [description]
+disable-model-invocation: [true for manual workflow, false for automatic]
 ---
-[contenuto]
+[content]
 ```
 
-### Per Subagent
+### For Subagent
 ```markdown
-// .claude/agents/[nome].md
+// .claude/agents/[name].md
 ---
-name: [nome]
-description: [descrizione]
-tools: [lista tool: Read, Grep, Glob, Bash, Edit, Write]
+name: [name]
+description: [description]
+tools: [tool list: Read, Grep, Glob, Bash, Edit, Write]
 model: [opus|sonnet|haiku]
 ---
-[system prompt specializzato]
+[specialized system prompt]
 ```
 
-### Per Permissions
+### For Permissions
 ```json
 // .claude/settings.json
 {
@@ -141,34 +141,34 @@ model: [opus|sonnet|haiku]
 }
 ```
 
-### Per Custom Command
+### For Custom Command
 ```json
 // .claude/settings.json
 {
   "customCommands": {
-    "[nome]": "[prompt]"
+    "[name]": "[prompt]"
   }
 }
 ```
 
-### Per CLAUDE.md
-Aggiungi la regola al file CLAUDE.md nella root del progetto.
+### For CLAUDE.md
+Add the rule to the CLAUDE.md file in the project root.
 
 ---
 
-## Step 5: Verifica e istruzioni
+## Step 5: Verify and instruct
 
-Dopo aver creato:
-1. Mostra i file creati
-2. Spiega come testare/usare l'automazione
-3. Suggerisci eventuali miglioramenti futuri
-4. Se è una skill/subagent, mostra il comando per invocarla
+After creating:
+1. Show the created files
+2. Explain how to test/use the automation
+3. Suggest possible future improvements
+4. If it's a skill/subagent, show the command to invoke it
 
 ---
 
-## Note importanti
+## Important notes
 
-- Se l'utente usa `--dangerously-skip-permissions`, i Permissions non funzionano. Suggerisci Hook come alternativa per blocchi.
-- Le istruzioni in CLAUDE.md sono advisory, non garantite. Se serve certezza, usa Hook.
-- Gli Hook sono script, non hanno accesso all'intelligenza di Claude. Per logica complessa, combina Hook + Skill.
-- I Subagent consumano token extra ma preservano il contesto principale.
+- If the user uses `--dangerously-skip-permissions`, Permissions won't work. Suggest Hook as an alternative for blocks.
+- CLAUDE.md instructions are advisory, not guaranteed. If certainty is needed, use Hook.
+- Hooks are scripts, they don't have access to Claude's intelligence. For complex logic, combine Hook + Skill.
+- Subagents consume extra tokens but preserve the main context.
