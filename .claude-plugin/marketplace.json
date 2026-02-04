@@ -1,0 +1,18 @@
+{
+  "name": "elmisi",
+  "owner": {
+    "name": "elmisi"
+  },
+  "metadata": {
+    "description": "Plugins by elmisi",
+    "homepage": "https://github.com/elmisi/claude-code-expert"
+  },
+  "plugins": [
+    {
+      "name": "claude-code-expert",
+      "version": "1.0.0",
+      "source": "./plugin",
+      "description": "Expert advisor that helps you decide and create the right Claude Code automation (skills, hooks, subagents, permissions, etc.)"
+    }
+  ]
+}
