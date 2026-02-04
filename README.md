@@ -41,6 +41,30 @@ Then restart Claude Code to activate the plugin.
 /setup-automation API design guidelines
 ```
 
+## Managing Automations
+
+All automations created by this plugin are tracked in a registry (`~/.claude/automations-registry.json`). You can manage them with sub-commands:
+
+| Command | Description |
+|---------|-------------|
+| `/setup-automation list` | List all tracked automations with options to view, edit, delete, or export |
+| `/setup-automation edit <name>` | Modify an existing automation (name, description, behavior, scope) |
+| `/setup-automation delete <name>` | Remove an automation with confirmation |
+| `/setup-automation export [file]` | Export all automations to a portable JSON file |
+| `/setup-automation import <file>` | Import automations from another machine with conflict resolution |
+
+### Export/Import Example
+
+```bash
+# On machine A: export your automations
+/setup-automation export ~/my-automations.json
+
+# Copy the file to machine B, then import
+/setup-automation import ~/my-automations.json
+```
+
+When importing, you'll be asked how to handle conflicts if an automation with the same name already exists.
+
 ## How it works
 
 1. **Auto-updates**: Fetches the latest Claude Code documentation to stay current with new features
