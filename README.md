@@ -19,8 +19,11 @@ This plugin acts as an expert advisor. You describe what you want to automate, i
 ## Installation
 
 ```bash
-claude plugin add claude-code-expert
+/plugin marketplace add elmisi/claude-code-expert
+/plugin install claude-code-expert
 ```
+
+Then restart Claude Code to activate the plugin.
 
 ## Usage
 
