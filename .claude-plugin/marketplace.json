@@ -10,7 +10,7 @@
   "plugins": [
     {
       "name": "claude-code-expert",
-      "version": "1.5.0",
+      "version": "1.5.1",
       "source": "./plugin",
       "description": "Expert advisor that helps you decide and create the right Claude Code automation (skills, hooks, subagents, permissions, etc.)"
     }
