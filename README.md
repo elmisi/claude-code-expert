@@ -9,7 +9,7 @@
 
 ## Why this plugin?
 
-Claude Code offers multiple automation mechanisms: **skills**, **hooks**, **subagents**, **permissions**, **CLAUDE.md**, **custom commands**, **MCP servers**, **LSP servers**, and **agent teams**. Each serves a different purpose, but choosing the right one isn't always obvious.
+[Claude Code](https://claude.ai/code) is Anthropic's AI coding agent for the terminal. It offers multiple automation mechanisms: **skills**, **hooks**, **subagents**, **permissions**, **CLAUDE.md**, **custom commands**, **MCP servers**, **LSP servers**, and **agent teams**. Each serves a different purpose, but choosing the right one isn't always obvious.
 
 **Common questions:**
 - Should I use a hook or a skill?
@@ -47,6 +47,38 @@ Then restart Claude Code to activate the plugin.
 /automate integrate GitHub tools via MCP
 /automate set up TypeScript language server
 ```
+
+## See it in action
+
+> `/automate run tests before every commit`
+
+The plugin interviews you to understand exactly what you need:
+
+**Q: When should this happen?**
+&rarr; *Always, on every commit*
+
+**Q: Must it be guaranteed, or just a guideline?**
+&rarr; *Guaranteed — block the commit if tests fail*
+
+**Q: Should Claude decide which tests to run?**
+&rarr; *Yes, based on the changed files*
+
+### Decision: Hook + Skill
+
+> *"A Skill alone won't work — Claude can skip skills. You need a **Hook** to guarantee tests run on every commit. But since Claude should intelligently pick which tests based on changed files, you also need a **Skill** for the logic. I'll create both."*
+
+**Files created:**
+
+| File | Purpose |
+|------|---------|
+| `~/.claude/settings.json` | Hook: blocks `git commit` unless tests pass |
+| `~/.claude/skills/test-runner/SKILL.md` | Skill: analyzes changes, picks relevant tests |
+
+Both files are validated against schemas and registered for easy management (`/automate list`).
+
+**The twist:** had you answered *"just a guideline"* instead, the plugin would create a single `CLAUDE.md` rule — no hooks, no skills. Same topic, different needs, completely different automation.
+
+---
 
 ## Managing Automations
 
