@@ -3,7 +3,7 @@
 # validate-config.sh - Validate Claude Code configurations against schemas
 #
 # Usage: ./validate-config.sh <type> <content>
-#   type: hooks | skill | subagent | permissions | custom-commands
+#   type: hooks | skill | subagent | permissions | custom-commands | mcp-servers | lsp-servers | agent-team
 #   content: JSON string or file path to validate
 #
 # Examples:
@@ -42,7 +42,7 @@ success() {
 usage() {
     echo "Usage: $0 <type> <content>"
     echo ""
-    echo "Types: hooks, skill, subagent, permissions, custom-commands"
+    echo "Types: hooks, skill, subagent, permissions, custom-commands, mcp-servers, lsp-servers, agent-team"
     echo ""
     echo "Content can be:"
     echo "  - A JSON/YAML string"
@@ -85,10 +85,13 @@ INVALID_HOOK_EVENTS=(
 VALID_HOOK_TYPES=("command" "prompt" "agent")
 
 # Valid subagent tools
-VALID_TOOLS=("Read" "Grep" "Glob" "Bash" "Edit" "Write" "WebFetch" "WebSearch" "Task" "NotebookEdit")
+VALID_TOOLS=("Read" "Grep" "Glob" "Bash" "Edit" "Write" "WebFetch" "WebSearch" "Task" "NotebookEdit" "AskUserQuestion" "TaskOutput" "ExitPlanMode" "MCPSearch")
 
 # Valid models
-VALID_MODELS=("opus" "sonnet" "haiku")
+VALID_MODELS=("opus" "sonnet" "haiku" "inherit")
+
+# Valid MCP server types
+VALID_MCP_TYPES=("stdio" "sse")
 
 validate_hooks() {
     local content="$1"
@@ -240,6 +243,13 @@ validate_skill() {
         ((errors++))
     fi
 
+    # Validate context if present
+    local ctx=$(echo "$frontmatter" | grep "^context:" | cut -d: -f2 | tr -d ' ')
+    if [ -n "$ctx" ] && [ "$ctx" != "fork" ]; then
+        error "context must be 'fork', got '$ctx'"
+        ((errors++))
+    fi
+
     return $errors
 }
 
@@ -289,6 +299,10 @@ validate_subagent() {
         IFS=',' read -ra tool_array <<< "$tools"
         for tool in "${tool_array[@]}"; do
             tool=$(echo "$tool" | tr -d ' ')
+            # Allow MCP tools (mcp__*) without validation
+            if [[ "$tool" == mcp__* ]]; then
+                continue
+            fi
             local valid_tool=false
             for vt in "${VALID_TOOLS[@]}"; do
                 if [ "$tool" == "$vt" ]; then
@@ -301,6 +315,38 @@ validate_subagent() {
                 ((errors++))
             fi
         done
+    fi
+
+    # Validate permissionMode if present
+    local pm=$(echo "$frontmatter" | grep "^permissionMode:" | cut -d: -f2 | tr -d ' ')
+    if [ -n "$pm" ]; then
+        local valid_pm=false
+        for vpm in "default" "acceptEdits" "dontAsk" "bypassPermissions" "plan"; do
+            if [ "$pm" == "$vpm" ]; then
+                valid_pm=true
+                break
+            fi
+        done
+        if [ "$valid_pm" == "false" ]; then
+            error "Invalid permissionMode '$pm'. Valid: default, acceptEdits, dontAsk, bypassPermissions, plan"
+            ((errors++))
+        fi
+    fi
+
+    # Validate memory if present
+    local mem=$(echo "$frontmatter" | grep "^memory:" | cut -d: -f2 | tr -d ' ')
+    if [ -n "$mem" ]; then
+        local valid_mem=false
+        for vmem in "user" "project" "local"; do
+            if [ "$mem" == "$vmem" ]; then
+                valid_mem=true
+                break
+            fi
+        done
+        if [ "$valid_mem" == "false" ]; then
+            error "Invalid memory scope '$mem'. Valid: user, project, local"
+            ((errors++))
+        fi
     fi
 
     return $errors
@@ -379,6 +425,212 @@ validate_custom_commands() {
     return $errors
 }
 
+validate_mcp_servers() {
+    local content="$1"
+    local errors=0
+
+    # Check if jq is available
+    if ! command -v jq &> /dev/null; then
+        error "jq is required but not installed"
+        exit 1
+    fi
+
+    # Parse JSON
+    if ! echo "$content" | jq . > /dev/null 2>&1; then
+        error "Invalid JSON format"
+        return 1
+    fi
+
+    # Check for mcpServers key
+    if ! echo "$content" | jq -e '.mcpServers' > /dev/null 2>&1; then
+        error "Missing 'mcpServers' key"
+        return 1
+    fi
+
+    # Validate each server
+    local servers=$(echo "$content" | jq -r '.mcpServers | keys[]' 2>/dev/null)
+    for server in $servers; do
+        local server_config=$(echo "$content" | jq ".mcpServers[\"$server\"]")
+
+        # Check type field
+        local server_type=$(echo "$server_config" | jq -r '.type // empty')
+        if [ -z "$server_type" ]; then
+            error "Server '$server' missing 'type' field (must be 'stdio' or 'sse')"
+            ((errors++))
+            continue
+        fi
+
+        local valid_type=false
+        for vt in "${VALID_MCP_TYPES[@]}"; do
+            if [ "$server_type" == "$vt" ]; then
+                valid_type=true
+                break
+            fi
+        done
+        if [ "$valid_type" == "false" ]; then
+            error "Server '$server' has invalid type '$server_type'. Valid: ${VALID_MCP_TYPES[*]}"
+            ((errors++))
+        fi
+
+        # Check required fields by type
+        if [ "$server_type" == "stdio" ]; then
+            local cmd=$(echo "$server_config" | jq -r '.command // empty')
+            if [ -z "$cmd" ]; then
+                error "Server '$server' (stdio) missing 'command' field"
+                ((errors++))
+            fi
+        elif [ "$server_type" == "sse" ]; then
+            local url=$(echo "$server_config" | jq -r '.url // empty')
+            if [ -z "$url" ]; then
+                error "Server '$server' (sse) missing 'url' field"
+                ((errors++))
+            fi
+        fi
+    done
+
+    return $errors
+}
+
+validate_lsp_servers() {
+    local content="$1"
+    local errors=0
+
+    # Check if jq is available
+    if ! command -v jq &> /dev/null; then
+        error "jq is required but not installed"
+        exit 1
+    fi
+
+    # Parse JSON
+    if ! echo "$content" | jq . > /dev/null 2>&1; then
+        error "Invalid JSON format"
+        return 1
+    fi
+
+    # Validate each server (top-level keys are server names)
+    local servers=$(echo "$content" | jq -r 'keys[]' 2>/dev/null)
+    if [ -z "$servers" ]; then
+        error "No LSP servers found in configuration"
+        return 1
+    fi
+
+    for server in $servers; do
+        # Skip _template metadata
+        if [ "$server" == "_template" ]; then
+            continue
+        fi
+
+        local server_config=$(echo "$content" | jq ".[\"$server\"]")
+
+        # Check command field
+        local cmd=$(echo "$server_config" | jq -r '.command // empty')
+        if [ -z "$cmd" ]; then
+            error "Server '$server' missing 'command' field"
+            ((errors++))
+        fi
+
+        # Check languages field
+        if ! echo "$server_config" | jq -e '.languages' > /dev/null 2>&1; then
+            error "Server '$server' missing 'languages' field"
+            ((errors++))
+        elif ! echo "$server_config" | jq -e '.languages | type == "array"' > /dev/null 2>&1; then
+            error "Server '$server' 'languages' must be an array"
+            ((errors++))
+        fi
+    done
+
+    return $errors
+}
+
+validate_agent_team() {
+    local content="$1"
+    local errors=0
+
+    # Check if jq is available
+    if ! command -v jq &> /dev/null; then
+        error "jq is required but not installed"
+        exit 1
+    fi
+
+    # Parse JSON
+    if ! echo "$content" | jq . > /dev/null 2>&1; then
+        error "Invalid JSON format"
+        return 1
+    fi
+
+    # Check required fields
+    local name=$(echo "$content" | jq -r '.name // empty')
+    if [ -z "$name" ]; then
+        error "Missing 'name' field"
+        ((errors++))
+    fi
+
+    local desc=$(echo "$content" | jq -r '.description // empty')
+    if [ -z "$desc" ]; then
+        error "Missing 'description' field"
+        ((errors++))
+    fi
+
+    # Check agents array
+    if ! echo "$content" | jq -e '.agents' > /dev/null 2>&1; then
+        error "Missing 'agents' array"
+        return 1
+    fi
+
+    if ! echo "$content" | jq -e '.agents | type == "array"' > /dev/null 2>&1; then
+        error "'agents' must be an array"
+        return 1
+    fi
+
+    local num_agents=$(echo "$content" | jq '.agents | length')
+    if [ "$num_agents" -lt 1 ]; then
+        error "Agent team must have at least 1 agent"
+        ((errors++))
+    fi
+
+    # Validate each agent
+    for ((i=0; i<num_agents; i++)); do
+        local agent=$(echo "$content" | jq ".agents[$i]")
+
+        local agent_name=$(echo "$agent" | jq -r '.name // empty')
+        if [ -z "$agent_name" ]; then
+            error "Agent #$((i+1)) missing 'name' field"
+            ((errors++))
+        fi
+
+        local agent_role=$(echo "$agent" | jq -r '.role // empty')
+        if [ -z "$agent_role" ]; then
+            error "Agent #$((i+1)) missing 'role' field"
+            ((errors++))
+        fi
+
+        # Validate model if present
+        local agent_model=$(echo "$agent" | jq -r '.model // empty')
+        if [ -n "$agent_model" ]; then
+            local valid_model=false
+            for vm in "${VALID_MODELS[@]}"; do
+                if [ "$agent_model" == "$vm" ]; then
+                    valid_model=true
+                    break
+                fi
+            done
+            if [ "$valid_model" == "false" ]; then
+                error "Agent '$agent_name' has invalid model '$agent_model'. Valid: ${VALID_MODELS[*]}"
+                ((errors++))
+            fi
+        fi
+    done
+
+    # Validate settings if present
+    local display_mode=$(echo "$content" | jq -r '.settings.displayMode // empty')
+    if [ -n "$display_mode" ] && [ "$display_mode" != "in-process" ] && [ "$display_mode" != "split-panes" ]; then
+        error "Invalid displayMode '$display_mode'. Valid: in-process, split-panes"
+        ((errors++))
+    fi
+
+    return $errors
+}
+
 # Main
 if [ $# -lt 2 ]; then
     usage
@@ -433,6 +685,30 @@ case "$TYPE" in
     custom-commands)
         if validate_custom_commands "$CONTENT"; then
             success "Custom commands configuration is valid"
+            exit 0
+        else
+            exit 1
+        fi
+        ;;
+    mcp-servers)
+        if validate_mcp_servers "$CONTENT"; then
+            success "MCP server configuration is valid"
+            exit 0
+        else
+            exit 1
+        fi
+        ;;
+    lsp-servers)
+        if validate_lsp_servers "$CONTENT"; then
+            success "LSP server configuration is valid"
+            exit 0
+        else
+            exit 1
+        fi
+        ;;
+    agent-team)
+        if validate_agent_team "$CONTENT"; then
+            success "Agent team configuration is valid"
             exit 0
         else
             exit 1

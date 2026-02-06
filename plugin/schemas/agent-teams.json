@@ -1,0 +1,128 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Valid agent team configuration for Claude Code (experimental)",
+  "location": {
+    "global": "~/.claude/teams/{team-name}/config.json"
+  },
+  "structure": {
+    "description": "JSON object defining a team of Claude agents",
+    "example": {
+      "name": "team-name",
+      "description": "What the team does",
+      "agents": [
+        {
+          "name": "agent-name",
+          "role": "Description of agent's role",
+          "tools": ["Read", "Grep", "Glob", "Bash"],
+          "model": "inherit"
+        }
+      ],
+      "settings": {
+        "displayMode": "in-process",
+        "delegateMode": false,
+        "requirePlanApproval": false
+      }
+    }
+  },
+  "fields": {
+    "name": {
+      "type": "string",
+      "required": true,
+      "description": "Unique name for the team"
+    },
+    "description": {
+      "type": "string",
+      "required": true,
+      "description": "Description of what the team does"
+    },
+    "agents": {
+      "type": "array",
+      "required": true,
+      "description": "Array of agent configurations",
+      "items": {
+        "name": {
+          "type": "string",
+          "required": true,
+          "description": "Unique name for the agent within the team"
+        },
+        "role": {
+          "type": "string",
+          "required": true,
+          "description": "Description of the agent's role and responsibilities"
+        },
+        "tools": {
+          "type": "array",
+          "items": "string",
+          "required": false,
+          "description": "List of tools the agent can use",
+          "validValues": ["Read", "Grep", "Glob", "Bash", "Edit", "Write", "WebFetch", "WebSearch", "Task", "NotebookEdit"]
+        },
+        "model": {
+          "type": "string",
+          "required": false,
+          "default": "inherit",
+          "description": "Model to use for this agent (inherit uses the parent session model)"
+        }
+      }
+    },
+    "settings": {
+      "type": "object",
+      "required": false,
+      "description": "Team-level settings",
+      "properties": {
+        "displayMode": {
+          "type": "string",
+          "validValues": ["in-process", "split-panes"],
+          "default": "in-process",
+          "description": "How agent outputs are displayed"
+        },
+        "delegateMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "When true, the lead agent only coordinates and does not do direct work"
+        },
+        "requirePlanApproval": {
+          "type": "boolean",
+          "default": false,
+          "description": "When true, the user must approve the plan before agents start working"
+        }
+      }
+    }
+  },
+  "requires": {
+    "description": "Prerequisites for using agent teams",
+    "environmentVariable": "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1"
+  },
+  "limitations": {
+    "description": "Important limitations to know",
+    "items": [
+      "Experimental feature - API and behavior may change without notice",
+      "Higher token consumption due to multiple concurrent agents",
+      "Each agent runs in its own context with limited shared state",
+      "Requires the CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1 environment variable"
+    ]
+  },
+  "example": {
+    "name": "code-review-team",
+    "description": "Team of agents for comprehensive code review",
+    "agents": [
+      {
+        "name": "security-reviewer",
+        "role": "Review code for security vulnerabilities and OWASP top 10",
+        "tools": ["Read", "Grep", "Glob", "Bash"],
+        "model": "inherit"
+      },
+      {
+        "name": "performance-reviewer",
+        "role": "Review code for performance issues, memory leaks, and optimization opportunities",
+        "tools": ["Read", "Grep", "Glob", "Bash"],
+        "model": "inherit"
+      }
+    ],
+    "settings": {
+      "displayMode": "in-process",
+      "delegateMode": false,
+      "requirePlanApproval": false
+    }
+  }
+}

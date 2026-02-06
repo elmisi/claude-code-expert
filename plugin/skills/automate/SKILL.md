@@ -1,10 +1,10 @@
 ---
-name: setup-automation
+name: automate
 description: Expert advisor that helps decide and create the right Claude Code automation
 disable-model-invocation: true
 ---
 
-# Claude Code Expert - Setup Automation
+# Claude Code Automation
 
 Arguments: $ARGUMENTS
 
@@ -30,7 +30,7 @@ Parse `$ARGUMENTS` to determine the action:
 Read the registry file: `~/.claude/automations-registry.json`
 
 If it doesn't exist, say:
-> "No automations registry found. Create automations with `/setup-automation <description>` to start tracking."
+> "No automations registry found. Create automations with `/automate <description>` to start tracking."
 
 If it exists, display a table:
 
@@ -128,7 +128,7 @@ Default file: `~/.claude/automations-export.json`
 
 4. Write the file
 5. Show summary: "Exported N automations to <file>"
-6. Suggest: "You can import this on another machine with `/setup-automation import <file>`"
+6. Suggest: "You can import this on another machine with `/automate import <file>`"
 
 ---
 
@@ -146,7 +146,7 @@ Arguments: `import <file>`
       - "Skip this automation"
    c. If not exists, show preview and ask confirmation
 4. Create the files in appropriate locations
-5. Add to registry with `created-by: setup-automation` marker
+5. Add to registry with `created-by: automate` marker
 6. Show summary of imported automations
 
 ---
@@ -157,7 +157,7 @@ Arguments: `import <file>`
 
 ---
 
-## ⚠️ CRITICAL RULE: COMPLETE ALL COMPONENTS
+## CRITICAL RULE: COMPLETE ALL COMPONENTS
 
 **This skill MUST create EVERYTHING it promises. Partial implementations are FORBIDDEN.**
 
@@ -184,6 +184,9 @@ Read the schema files from this plugin to know what values are valid:
 - `plugin/schemas/subagents.json` - Subagent configuration
 - `plugin/schemas/permissions.json` - Permission patterns
 - `plugin/schemas/custom-commands.json` - Custom command format
+- `plugin/schemas/mcp-servers.json` - MCP server configuration
+- `plugin/schemas/lsp-servers.json` - LSP server configuration
+- `plugin/schemas/agent-teams.json` - Agent team configuration
 
 **CRITICAL: Only use values listed in these schemas. Never invent event names or fields.**
 
@@ -193,6 +196,9 @@ Fetch the official documentation to check for updates:
 - https://code.claude.com/docs/en/skills
 - https://code.claude.com/docs/en/sub-agents
 - https://code.claude.com/docs/en/settings
+- https://code.claude.com/docs/en/plugins
+- https://code.claude.com/docs/en/mcp
+- https://code.claude.com/docs/en/agent-teams
 
 Compare with `plugin/docs/claude-code-reference.md`. If there are significant differences:
 1. Show the diff to the user
@@ -225,22 +231,30 @@ Use AskUserQuestion to clarify the use case. Ask specific questions:
 - Are parameters/arguments needed?
 - Should it produce files, output, or modify configurations?
 
+### External integrations and advanced capabilities
+- Does this involve accessing external tools or services (databases, APIs, GitHub, etc.)? → MCP server
+- Do you need code intelligence like diagnostics, hover info, or go-to-definition? → LSP server
+- Does this require multiple agents working in parallel on different aspects? → Agent Teams
+
 ---
 
 ## Step 2: Analysis and decision
 
 Based on the answers, use this decision matrix:
 
-| Criterion | Hook | Skill | Skill (manual) | Subagent | Permissions | CLAUDE.md | Custom Cmd |
-|-----------|------|-------|----------------|----------|-------------|-----------|------------|
-| Must happen ALWAYS without exceptions | YES | no | no | no | no | no | no |
-| Rule about what Claude can/cannot do | no | no | no | no | YES | maybe | no |
-| Domain knowledge applied automatically | no | YES | no | no | no | maybe | no |
-| Complex workflow invoked manually | no | no | YES | no | no | no | no |
-| Needs separate/isolated context | no | no | no | YES | no | no | no |
-| Independent review/analysis | no | no | no | YES | no | no | no |
-| Simple global rule | no | no | no | no | no | YES | no |
-| Shortcut for frequent prompt | no | no | no | no | no | no | YES |
+| Criterion | Hook | Skill | Skill (manual) | Subagent | Permissions | CLAUDE.md | Custom Cmd | MCP Server | LSP Server | Agent Team |
+|-----------|------|-------|----------------|----------|-------------|-----------|------------|------------|------------|------------|
+| Must happen ALWAYS without exceptions | YES | no | no | no | no | no | no | no | no | no |
+| Rule about what Claude can/cannot do | no | no | no | no | YES | maybe | no | no | no | no |
+| Domain knowledge applied automatically | no | YES | no | no | no | maybe | no | no | no | no |
+| Complex workflow invoked manually | no | no | YES | no | no | no | no | no | no | no |
+| Needs separate/isolated context | no | no | no | YES | no | no | no | no | no | no |
+| Independent review/analysis | no | no | no | YES | no | no | no | no | no | no |
+| Simple global rule | no | no | no | no | no | YES | no | no | no | no |
+| Shortcut for frequent prompt | no | no | no | no | no | no | YES | no | no | no |
+| External tool/service integration | no | no | no | no | no | no | no | YES | no | no |
+| Code intelligence/language analysis | no | no | no | no | no | no | no | no | YES | no |
+| Parallel multi-agent orchestration | no | no | no | no | no | no | no | no | no | YES |
 
 ### Common combinations (MUST create ALL components)
 
@@ -259,6 +273,16 @@ Based on the answers, use this decision matrix:
 - REQUIRED: Permission rule in `settings.json`
 - REQUIRED: Rule explanation in `CLAUDE.md`
 - REQUIRED: Both registered
+
+**MCP Server + Skill** - External tool access + workflow orchestration
+- REQUIRED: MCP server config in `.mcp.json`
+- REQUIRED: Skill file with workflow using MCP tools
+- REQUIRED: Both registered with links
+
+**Agent Team + Skill** - Multi-agent orchestration + domain knowledge
+- REQUIRED: Team config in `~/.claude/teams/{name}/config.json`
+- REQUIRED: Skill defining when/how to invoke the team
+- REQUIRED: Both registered with links
 
 ---
 
@@ -298,7 +322,7 @@ After creating the files, add to `~/.claude/automations-registry.json`:
 {
   "id": "unique-id",
   "name": "automation-name",
-  "type": "skill|hook|subagent|permission|custom-command|claude-md",
+  "type": "skill|hook|subagent|permission|custom-command|claude-md|mcp-server|lsp-server|agent-team",
   "scope": "global|project",
   "path": "path/to/main/file",
   "created": "ISO-timestamp",
@@ -309,14 +333,14 @@ After creating the files, add to `~/.claude/automations-registry.json`:
 
 ### File markers
 
-Add `created-by: setup-automation` marker to files:
+Add `created-by: automate` marker to files:
 
 **For Skills/Subagents (markdown frontmatter):**
 ```yaml
 ---
 name: skill-name
 description: ...
-created-by: setup-automation
+created-by: automate
 ---
 ```
 
@@ -325,7 +349,29 @@ Add to the specific entry:
 ```json
 {
   "_meta": {
-    "createdBy": "setup-automation",
+    "createdBy": "automate",
+    "createdAt": "ISO-timestamp"
+  }
+}
+```
+
+**For MCP/LSP configs (JSON):**
+Same pattern as hooks:
+```json
+{
+  "_meta": {
+    "createdBy": "automate",
+    "createdAt": "ISO-timestamp"
+  }
+}
+```
+
+**For Agent Teams (JSON):**
+Same pattern:
+```json
+{
+  "_meta": {
+    "createdBy": "automate",
     "createdAt": "ISO-timestamp"
   }
 }
@@ -335,7 +381,7 @@ Add to the specific entry:
 
 **ONLY use these valid events** (from `schemas/hooks.json`):
 - `SessionStart` - Session begins (matchers: startup, resume, clear, compact)
-- `SessionEnd` - Session ends (matchers: clear, logout, prompt_input_exit, other)
+- `SessionEnd` - Session ends (matchers: clear, logout, prompt_input_exit, other, bypass_permissions_disabled)
 - `UserPromptSubmit` - When user submits a prompt (no matcher)
 - `PreToolUse` - Before a tool executes (matchers: Bash, Edit, Write, Edit|Write, mcp__.*)
 - `PostToolUse` - After a tool succeeds (same matchers as PreToolUse)
@@ -368,9 +414,29 @@ Add to the specific entry:
 }
 ```
 
+**Hook handler fields:**
+- `type` (string, required): `command`, `prompt`, or `agent`
+- `command` (string): Shell command to run (command type)
+- `prompt` (string): Prompt text (prompt/agent type)
+- `async` (boolean): Run hook in background without blocking Claude (command type only)
+- `timeout` (integer): Timeout in ms. Defaults: command=600000, prompt=30000, agent=60000
+- `statusMessage` (string): Custom spinner message while hook runs
+- `model` (string): Model for prompt/agent hooks (default: haiku)
+
 **Exit codes:**
 - Exit 0 = allow the action
 - Exit 2 = block the action (stderr becomes Claude's feedback)
+
+**Input modification (PreToolUse only):**
+PreToolUse hooks can modify tool inputs via `hookSpecificOutput.updatedInput`. When a hook returns JSON with an `updatedInput` field, Claude will use the modified input instead of the original.
+
+**Environment variables available to hooks:**
+- `TOOL_NAME` - Name of the tool being invoked
+- `TOOL_INPUT` - JSON-encoded tool input
+- `SESSION_ID` - Current session identifier
+- `CLAUDE_ENV_FILE` - File path for persisting environment variables (SessionStart hooks)
+- `CLAUDE_PLUGIN_ROOT` - Root directory of the plugin
+- `CLAUDE_CODE_REMOTE` - Set to 'true' in remote/web environments
 
 **Use templates from `plugin/templates/hook-*.json` as a base.**
 
@@ -384,7 +450,7 @@ Required frontmatter:
 name: skill-name
 description: What this skill does
 disable-model-invocation: true|false
-created-by: setup-automation
+created-by: automate
 ---
 ```
 
@@ -400,13 +466,22 @@ Required frontmatter:
 name: agent-name
 description: What this agent does
 tools: Read, Grep, Glob, Bash
-model: sonnet
-created-by: setup-automation
+model: inherit
+created-by: automate
 ---
 ```
 
-Valid tools: Read, Grep, Glob, Bash, Edit, Write, WebFetch, WebSearch, Task, NotebookEdit
-Valid models: opus, sonnet, haiku
+Valid tools: Read, Grep, Glob, Bash, Edit, Write, WebFetch, WebSearch, Task, NotebookEdit, AskUserQuestion, TaskOutput, ExitPlanMode, MCPSearch
+MCP tools can also be used as `mcp__<server>__<tool>`
+
+Valid models: opus, sonnet, haiku, inherit
+
+Optional frontmatter fields:
+- `disallowedTools` - Tools the subagent cannot use
+- `permissionMode` - Permission handling mode
+- `skills` - Skills available to the subagent
+- `hooks` - Hooks specific to the subagent
+- `memory` - Memory/context configuration
 
 Use template from `plugin/templates/subagent.md`.
 
@@ -441,6 +516,84 @@ Location: `.claude/settings.json`
 
 Add the rule to `./CLAUDE.md` (project) or `~/.claude/CLAUDE.md` (global).
 
+### For MCP Server
+
+Location: `.mcp.json` (project) or `~/.claude.json` (global, under `mcpServers` key)
+
+Structure:
+```json
+{
+  "mcpServers": {
+    "server-name": {
+      "type": "stdio",
+      "command": "path/to/server",
+      "args": ["--flag"],
+      "env": {"KEY": "value"}
+    }
+  }
+}
+```
+
+Valid types: stdio, sse
+- stdio: requires `command` field
+- sse: requires `url` field
+- Tools appear as `mcp__<server>__<tool>` in Claude
+- Can be used in hook matchers: `"matcher": "mcp__servername__.*"`
+
+Use template from `plugin/templates/mcp-server.json`.
+
+### For LSP Server
+
+Location: `.lsp.json` (project) or `~/.claude/lsp.json` (global)
+
+Structure:
+```json
+{
+  "server-name": {
+    "command": "path/to/lsp-server",
+    "args": ["--stdio"],
+    "languages": ["typescript", "javascript"]
+  }
+}
+```
+
+Required: command, languages array
+Optional: args, initializationOptions
+
+Use template from `plugin/templates/lsp-server.json`.
+
+### For Agent Team
+
+Location: `~/.claude/teams/{team-name}/config.json`
+
+Structure:
+```json
+{
+  "name": "team-name",
+  "description": "What the team does",
+  "agents": [
+    {
+      "name": "agent-name",
+      "role": "What this agent does",
+      "tools": ["Read", "Grep", "Glob", "Bash"],
+      "model": "inherit"
+    }
+  ],
+  "settings": {
+    "displayMode": "in-process",
+    "delegateMode": false,
+    "requirePlanApproval": false
+  }
+}
+```
+
+**Warning**: Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` environment variable. Agent Teams are experimental and may change.
+
+Valid displayMode: in-process, split-panes
+Valid models: opus, sonnet, haiku, inherit
+
+Use template from `plugin/templates/agent-team.json`.
+
 ---
 
 ## Step 5: Validate before writing
@@ -451,6 +604,9 @@ Before creating any configuration file:
 2. **For hooks**: Verify structure has nested `hooks` array with `type` and `command`
 3. **For skills/subagents**: Verify required frontmatter fields
 4. **For subagents**: Verify tools and model are valid
+5. **For MCP servers**: Verify valid JSON, `mcpServers` key exists, each server has `type` and either `command` (stdio) or `url` (sse)
+6. **For LSP servers**: Verify valid JSON, each server has `command` and `languages` array
+7. **For Agent Teams**: Verify valid JSON, `name`/`description`/`agents` exist, each agent has `name` and `role`
 
 If validation fails, show the error and do NOT create the file.
 
@@ -488,6 +644,16 @@ If validation fails, show the error and do NOT create the file.
 - [ ] Permission rule in settings.json
 - [ ] Explanation in CLAUDE.md
 - [ ] Both registered
+
+**MCP Server + Skill:**
+- [ ] MCP config in .mcp.json with valid server entry
+- [ ] Skill file exists with valid frontmatter
+- [ ] Both registered with links
+
+**Agent Team + Skill:**
+- [ ] Team config exists with valid agents
+- [ ] Skill file exists
+- [ ] Both registered with links
 
 ---
 
@@ -546,18 +712,19 @@ Only after ALL verifications pass:
 ## Important notes
 
 ### NEVER do these things:
-- ❌ Create a hook with invalid event (PreCommit, PostCommit, PreBash, etc.)
-- ❌ Promise "Hook + Skill" but only create the skill
-- ❌ Remove a broken component instead of fixing it
-- ❌ Skip testing and verification
-- ❌ Finish with unchecked items in the CREATION PLAN
+- Create a hook with invalid event (PreCommit, PostCommit, PreBash, etc.)
+- Promise "Hook + Skill" but only create the skill
+- Remove a broken component instead of fixing it
+- Skip testing and verification
+- Finish with unchecked items in the CREATION PLAN
+- Create Agent Team config without warning about experimental status
 
 ### ALWAYS do these things:
-- ✅ Validate against schemas BEFORE creating
-- ✅ Create ALL components of a combination
-- ✅ Test each component works
-- ✅ Register everything in automations-registry.json
-- ✅ Link related components (relatedHook/relatedSkill)
+- Validate against schemas BEFORE creating
+- Create ALL components of a combination
+- Test each component works
+- Register everything in automations-registry.json
+- Link related components (relatedHook/relatedSkill)
 
 ### Technical notes:
 - If the user uses `--dangerously-skip-permissions`, Permissions won't work. Suggest Hook as an alternative for blocks.
@@ -566,3 +733,7 @@ Only after ALL verifications pass:
 - Subagents consume extra tokens but preserve the main context.
 - Valid hook events: SessionStart, SessionEnd, UserPromptSubmit, PreToolUse, PostToolUse, PostToolUseFailure, PermissionRequest, Notification, Stop, PreCompact, SubagentStart, SubagentStop
 - All automations are tracked in `~/.claude/automations-registry.json` for management with list/edit/delete/export/import.
+- Agent Teams require `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` and are experimental. The feature may change or be removed.
+- MCP tools appear as `mcp__<server>__<tool>` in Claude and can be matched in hooks using `"matcher": "mcp__servername__.*"`.
+- LSP servers must be installed separately; the config only points to them. Claude Code does not install language servers.
+- Background subagents cannot use MCP tools.

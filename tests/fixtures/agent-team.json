@@ -1,0 +1,23 @@
+{
+  "name": "code-review-team",
+  "description": "Team of agents for comprehensive code review",
+  "agents": [
+    {
+      "name": "security-reviewer",
+      "role": "Review code for security vulnerabilities and OWASP top 10",
+      "tools": ["Read", "Grep", "Glob", "Bash"],
+      "model": "inherit"
+    },
+    {
+      "name": "performance-reviewer",
+      "role": "Review code for performance issues, memory leaks, and optimization opportunities",
+      "tools": ["Read", "Grep", "Glob", "Bash"],
+      "model": "inherit"
+    }
+  ],
+  "settings": {
+    "displayMode": "in-process",
+    "delegateMode": false,
+    "requirePlanApproval": false
+  }
+}

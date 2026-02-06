@@ -1,0 +1,17 @@
+{
+  "_template": {
+    "name": "LSP Server Configuration",
+    "description": "Configure a language server for code intelligence",
+    "placeholders": {
+      "SERVER_NAME": "Unique identifier for the server",
+      "COMMAND": "Path to the language server executable",
+      "LANGUAGES": "Language IDs this server handles"
+    },
+    "location": ".lsp.json (project) or ~/.claude/lsp.json (global)"
+  },
+  "SERVER_NAME": {
+    "command": "COMMAND",
+    "args": ["--stdio"],
+    "languages": ["LANGUAGES"]
+  }
+}

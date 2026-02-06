@@ -1,0 +1,77 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Valid LSP (Language Server Protocol) server configuration for Claude Code",
+  "location": {
+    "project": ".lsp.json",
+    "global": "~/.claude/lsp.json"
+  },
+  "structure": {
+    "description": "JSON object with server entries keyed by server name",
+    "example": {
+      "server-name": {
+        "command": "/path/to/language-server",
+        "args": ["--stdio"],
+        "languages": ["typescript", "javascript"],
+        "initializationOptions": {}
+      }
+    }
+  },
+  "fields": {
+    "command": {
+      "type": "string",
+      "required": true,
+      "description": "Path to the language server executable"
+    },
+    "args": {
+      "type": "array",
+      "items": "string",
+      "required": false,
+      "description": "Command-line arguments passed to the language server"
+    },
+    "languages": {
+      "type": "array",
+      "items": "string",
+      "required": true,
+      "description": "Language IDs this server handles",
+      "examples": ["typescript", "javascript", "python", "rust", "go", "java", "typescriptreact", "javascriptreact", "c", "cpp"]
+    },
+    "initializationOptions": {
+      "type": "object",
+      "required": false,
+      "description": "Options passed to the server during initialization"
+    }
+  },
+  "provides": {
+    "description": "Capabilities provided by LSP servers",
+    "items": [
+      "Diagnostics (errors, warnings, hints)",
+      "Hover information (type info, documentation)",
+      "Completions (code suggestions)",
+      "Go-to-definition (jump to symbol source)"
+    ]
+  },
+  "limitations": {
+    "description": "Important limitations to know",
+    "items": [
+      "Adds latency to tool calls that interact with code",
+      "Language server must be installed separately on the system",
+      "Only supports servers using the stdio transport",
+      "Large projects may cause high memory usage from the language server"
+    ]
+  },
+  "example": {
+    "typescript-language-server": {
+      "command": "typescript-language-server",
+      "args": ["--stdio"],
+      "languages": ["typescript", "javascript", "typescriptreact", "javascriptreact"]
+    },
+    "pyright": {
+      "command": "pyright-langserver",
+      "args": ["--stdio"],
+      "languages": ["python"],
+      "initializationOptions": {
+        "python.analysis.typeCheckingMode": "basic"
+      }
+    }
+  }
+}

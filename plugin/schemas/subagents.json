@@ -3,7 +3,9 @@
   "description": "Valid subagent configuration for Claude Code",
   "location": {
     "project": ".claude/agents/[name].md",
-    "global": "~/.claude/agents/[name].md"
+    "global": "~/.claude/agents/[name].md",
+    "cli": "--agents flag (session-only, highest priority)",
+    "plugin": "plugin's agents/ directory (lowest priority)"
   },
   "frontmatter": {
     "required": {
@@ -19,21 +21,70 @@
     "optional": {
       "tools": {
         "type": "string",
-        "description": "Comma-separated list of allowed tools",
-        "validValues": ["Read", "Grep", "Glob", "Bash", "Edit", "Write", "WebFetch", "WebSearch", "Task", "NotebookEdit"],
+        "description": "Comma-separated list of allowed tools. By default, subagents inherit all tools from the main conversation including MCP tools.",
+        "validValues": ["Read", "Grep", "Glob", "Bash", "Edit", "Write", "WebFetch", "WebSearch", "Task", "NotebookEdit", "AskUserQuestion", "TaskOutput", "ExitPlanMode", "MCPSearch"],
+        "note": "MCP tools can also be included as mcp__<server>__<tool>",
         "example": "Read, Grep, Glob, Bash"
+      },
+      "disallowedTools": {
+        "type": "string",
+        "description": "Comma-separated list of tools to deny from inherited or specified list",
+        "example": "Bash, Edit, Write"
       },
       "model": {
         "type": "string",
-        "validValues": ["opus", "sonnet", "haiku"],
-        "default": "sonnet",
-        "description": "Which Claude model to use"
+        "validValues": ["opus", "sonnet", "haiku", "inherit"],
+        "default": "inherit",
+        "description": "Which Claude model to use. 'inherit' uses the same model as the main conversation."
+      },
+      "permissionMode": {
+        "type": "string",
+        "validValues": ["default", "acceptEdits", "dontAsk", "bypassPermissions", "plan"],
+        "description": "Permission mode for the subagent"
+      },
+      "skills": {
+        "type": "string",
+        "description": "Comma-separated list of skill names to preload into the subagent's context"
+      },
+      "hooks": {
+        "type": "object",
+        "description": "Lifecycle hooks scoped to this subagent (same format as global hooks)"
+      },
+      "memory": {
+        "type": "string",
+        "validValues": ["user", "project", "local"],
+        "description": "Persistent memory scope. Gives the subagent a persistent directory that survives across conversations."
+      }
+    }
+  },
+  "builtInAgents": {
+    "description": "Claude Code includes several built-in subagent types",
+    "agents": {
+      "Explore": {
+        "model": "haiku",
+        "tools": "Read, Grep, Glob (read-only)",
+        "purpose": "Fast codebase exploration"
+      },
+      "Plan": {
+        "model": "inherit",
+        "tools": "Read, Grep, Glob (read-only)",
+        "purpose": "Design implementation plans"
+      },
+      "general-purpose": {
+        "model": "inherit",
+        "tools": "all",
+        "purpose": "Complex multi-step tasks"
+      },
+      "Bash": {
+        "model": "inherit",
+        "tools": "Bash",
+        "purpose": "Command execution"
       }
     }
   },
   "structure": {
     "description": "YAML frontmatter followed by system prompt",
-    "example": "---\nname: agent-name\ndescription: What this agent does\ntools: Read, Grep, Glob, Bash\nmodel: sonnet\n---\n\nYou are a specialized agent for...\n\n## Instructions\n..."
+    "example": "---\nname: agent-name\ndescription: What this agent does\ntools: Read, Grep, Glob, Bash\nmodel: inherit\n---\n\nYou are a specialized agent for...\n\n## Instructions\n..."
   },
   "invocation": {
     "description": "How to invoke subagents",
@@ -42,5 +93,11 @@
       "Use the [name] agent to analyze security",
       "Launch a subagent for deep investigation"
     ]
+  },
+  "notes": {
+    "backgroundExecution": "Subagents can run concurrently in the background. Pre-approved permissions required.",
+    "resumption": "Subagents can be resumed with full conversation history using agent IDs.",
+    "mcpTools": "Background subagents cannot use MCP tools.",
+    "autoCompaction": "Subagents support automatic compaction like the main conversation."
   }
 }

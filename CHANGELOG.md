@@ -5,6 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-02-06
+
+### Breaking Changes
+- Renamed project from `claude-code-expert` to `claude-code-automation`
+- Renamed skill command from `/setup-automation` to `/automate`
+- Updated all references, file markers, and GitHub URLs
+
+### Added
+- **MCP Servers**: Full support for Model Context Protocol server configuration (schema, template, fixture, validation)
+- **LSP Servers**: Full support for Language Server Protocol configuration (schema, template, fixture, validation)
+- **Agent Teams**: Full support for experimental multi-agent orchestration (schema, template, fixture, validation)
+- New schemas: `mcp-servers.json`, `lsp-servers.json`, `agent-teams.json`
+- New templates: `mcp-server.json`, `lsp-server.json`, `agent-team.json`
+- New test fixtures: `mcp-server.json`, `lsp-server.json`, `agent-team.json`
+- Hook handler fields: `async`, `timeout`, `statusMessage`, `model` for prompt/agent hooks
+- Hook capabilities: `updatedInput` (PreToolUse input modification), `permissionDecision` (PermissionRequest control)
+- Subagent fields: `disallowedTools`, `permissionMode`, `skills`, `hooks`, `memory`
+- Subagent model default changed to `inherit`; new tools: `AskUserQuestion`, `TaskOutput`, `ExitPlanMode`, `MCPSearch`
+- Skill fields: `context` (fork mode), `hooks` (scoped hooks)
+- Built-in agents documentation (Explore, Plan, general-purpose, Bash)
+- New environment variables: `CLAUDE_ENV_FILE`, `CLAUDE_PLUGIN_ROOT`, `CLAUDE_CODE_REMOTE`
+- Decision matrix expanded with MCP Server, LSP Server, Agent Team columns
+- New combination patterns: MCP Server + Skill, Agent Team + Skill
+- Registry type values: `mcp-server`, `lsp-server`, `agent-team`
+- CONTRIBUTING.md with development setup, architecture overview, and PR checklist
+- GitHub issue templates (bug report, feature request, schema update)
+- Pull request template
+- GitHub Actions CI workflow (structure tests, E2E tests, fixture validation)
+- CI badge in README
+- Testing section in README explaining qualitative vs deterministic tests
+
+### Changed
+- Updated all schemas to match Claude Code 2026 features
+- Reference documentation expanded with MCP, LSP, Agent Teams sections
+- SKILL.md interview includes questions about external tools, code intelligence, and parallel agents
+- Validation script (`validate-config.sh`) supports new types: `mcp-servers`, `lsp-servers`, `agent-team`
+- Structure tests expanded from 14 to 23 (STRUCT-15 through STRUCT-23 for new types)
+- E2E tests expanded with TEST-04 (MCP), TEST-05 (LSP), TEST-06 (Agent Team)
+
+### Fixed
+- TEST-01 fixture: `PreBash` (invalid) → `PreToolUse` with `Bash` matcher (valid)
+- TEST-09 description: `PreWrite` (invalid) → `PreToolUse` with `Edit|Write` matcher (valid)
+
 ## [1.5.1] - 2026-02-05
 
 ### Added

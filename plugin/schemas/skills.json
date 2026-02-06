@@ -3,7 +3,8 @@
   "description": "Valid skill configuration for Claude Code",
   "location": {
     "project": ".claude/skills/[name]/SKILL.md",
-    "global": "~/.claude/skills/[name]/SKILL.md"
+    "global": "~/.claude/skills/[name]/SKILL.md",
+    "plugin": "plugin's skills/[name]/SKILL.md (namespaced as /plugin-name:skill-name)"
   },
   "frontmatter": {
     "required": {
@@ -21,6 +22,15 @@
         "type": "boolean",
         "default": false,
         "description": "If true, skill is only invoked manually via /skill-name. If false (default), Claude may apply it automatically when relevant."
+      },
+      "context": {
+        "type": "string",
+        "validValues": ["fork"],
+        "description": "If set to 'fork', the skill runs in a forked sub-agent context rather than the main conversation."
+      },
+      "hooks": {
+        "type": "object",
+        "description": "Lifecycle hooks scoped to this skill (same format as global hooks)"
       }
     }
   },
@@ -30,5 +40,8 @@
   "structure": {
     "description": "YAML frontmatter followed by markdown content",
     "example": "---\nname: skill-name\ndescription: What this skill does\ndisable-model-invocation: true\n---\n\n# Skill Content\n\nInstructions here..."
+  },
+  "notes": {
+    "hotReloading": "Skills modified in ~/.claude/skills or .claude/skills are immediately available without restarting the session (Claude Code 2.1+)."
   }
 }

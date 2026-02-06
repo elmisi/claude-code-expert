@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Run structure tests
+        run: ./tests/scripts/run-tests.sh structure
+
+      - name: Run E2E fixture tests
+        run: ./tests/scripts/run-tests.sh e2e
+
+      - name: Validate fixtures against schemas
+        run: |
+          SCRIPT="./plugin/scripts/validate-config.sh"
+          chmod +x "$SCRIPT"
+
+          echo "Validating hook fixture..."
+          "$SCRIPT" hooks ./tests/fixtures/hook-only.json
+
+          echo "Validating skill fixtures..."
+          "$SCRIPT" skill ./tests/fixtures/skill-auto.md
+          "$SCRIPT" skill ./tests/fixtures/skill-manual.md
+
+          echo "Validating subagent fixture..."
+          "$SCRIPT" subagent ./tests/fixtures/subagent.md
+
+          echo "Validating permissions fixture..."
+          "$SCRIPT" permissions ./tests/fixtures/permissions.json
+
+          echo "Validating custom-command fixture..."
+          "$SCRIPT" custom-commands ./tests/fixtures/custom-command.json
+
+          echo "Validating MCP server fixture..."
+          "$SCRIPT" mcp-servers ./tests/fixtures/mcp-server.json
+
+          echo "Validating LSP server fixture..."
+          "$SCRIPT" lsp-servers ./tests/fixtures/lsp-server.json
+
+          echo "Validating agent team fixture..."
+          "$SCRIPT" agent-team ./tests/fixtures/agent-team.json
+
+          echo "All fixtures validated successfully."

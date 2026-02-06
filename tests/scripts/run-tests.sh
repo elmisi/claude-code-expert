@@ -1,5 +1,5 @@
 #!/bin/bash
-# Main test runner for claude-code-expert
+# Main test runner for claude-code-automation
 #
 # Usage:
 #   ./run-tests.sh              # Run all tests (structure + e2e)
@@ -21,7 +21,7 @@ source "$SCRIPT_DIR/helpers.sh"
 # Parse arguments
 TEST_TYPE="${1:-all}"
 
-log_section "claude-code-expert Test Suite"
+log_section "claude-code-automation Test Suite"
 log_info "Project root: $PROJECT_ROOT"
 log_info "Test type: $TEST_TYPE"
 
@@ -41,7 +41,7 @@ run_structure_tests() {
     assert_file_exists "$PROJECT_ROOT/plugin/.claude-plugin/plugin.json" \
         "STRUCT-02: plugin.json exists"
 
-    assert_file_exists "$PROJECT_ROOT/plugin/skills/setup-automation/SKILL.md" \
+    assert_file_exists "$PROJECT_ROOT/plugin/skills/automate/SKILL.md" \
         "STRUCT-03: SKILL.md exists"
 
     # Test: JSON files are valid
@@ -56,7 +56,7 @@ run_structure_tests() {
     # Test: SKILL.md has valid frontmatter
     log_info "Testing SKILL.md frontmatter..."
 
-    assert_valid_frontmatter "$PROJECT_ROOT/plugin/skills/setup-automation/SKILL.md" \
+    assert_valid_frontmatter "$PROJECT_ROOT/plugin/skills/automate/SKILL.md" \
         "STRUCT-06: SKILL.md has valid frontmatter"
 
     # Test: Required fields in plugin.json
@@ -74,24 +74,60 @@ run_structure_tests() {
     # Test: SKILL.md contains required sections
     log_info "Testing SKILL.md content..."
 
-    assert_file_contains "$PROJECT_ROOT/plugin/skills/setup-automation/SKILL.md" \
+    assert_file_contains "$PROJECT_ROOT/plugin/skills/automate/SKILL.md" \
         "disable-model-invocation" "STRUCT-10: SKILL.md has disable-model-invocation"
 
-    assert_file_contains "$PROJECT_ROOT/plugin/skills/setup-automation/SKILL.md" \
+    assert_file_contains "$PROJECT_ROOT/plugin/skills/automate/SKILL.md" \
         "AskUserQuestion" "STRUCT-11: SKILL.md references AskUserQuestion"
 
-    assert_file_contains "$PROJECT_ROOT/plugin/skills/setup-automation/SKILL.md" \
+    assert_file_contains "$PROJECT_ROOT/plugin/skills/automate/SKILL.md" \
         '\$ARGUMENTS' "STRUCT-12: SKILL.md uses \$ARGUMENTS"
 
     # Test: Decision matrix is present
-    assert_file_contains "$PROJECT_ROOT/plugin/skills/setup-automation/SKILL.md" \
+    assert_file_contains "$PROJECT_ROOT/plugin/skills/automate/SKILL.md" \
         "Hook.*Skill.*Subagent" "STRUCT-13: SKILL.md has decision matrix"
 
     # Test: All automation types are documented
     for type in "Hook" "Skill" "Subagent" "Permissions" "CLAUDE.md" "Custom"; do
-        assert_file_contains "$PROJECT_ROOT/plugin/skills/setup-automation/SKILL.md" \
+        assert_file_contains "$PROJECT_ROOT/plugin/skills/automate/SKILL.md" \
             "$type" "STRUCT-14: SKILL.md documents $type"
     done
+
+    # Test: New schema files exist
+    log_info "Testing new schema files..."
+
+    assert_file_exists "$PROJECT_ROOT/plugin/schemas/mcp-servers.json" \
+        "STRUCT-15: mcp-servers.json schema exists"
+
+    assert_file_exists "$PROJECT_ROOT/plugin/schemas/lsp-servers.json" \
+        "STRUCT-16: lsp-servers.json schema exists"
+
+    assert_file_exists "$PROJECT_ROOT/plugin/schemas/agent-teams.json" \
+        "STRUCT-17: agent-teams.json schema exists"
+
+    # Test: New schema files are valid JSON
+    log_info "Testing new schema JSON validity..."
+
+    assert_valid_json "$PROJECT_ROOT/plugin/schemas/mcp-servers.json" \
+        "STRUCT-18: mcp-servers.json is valid JSON"
+
+    assert_valid_json "$PROJECT_ROOT/plugin/schemas/lsp-servers.json" \
+        "STRUCT-19: lsp-servers.json is valid JSON"
+
+    assert_valid_json "$PROJECT_ROOT/plugin/schemas/agent-teams.json" \
+        "STRUCT-20: agent-teams.json is valid JSON"
+
+    # Test: SKILL.md documents new automation types
+    log_info "Testing SKILL.md documents new types..."
+
+    assert_file_contains "$PROJECT_ROOT/plugin/skills/automate/SKILL.md" \
+        "MCP Server" "STRUCT-21: SKILL.md documents MCP Server"
+
+    assert_file_contains "$PROJECT_ROOT/plugin/skills/automate/SKILL.md" \
+        "LSP Server" "STRUCT-22: SKILL.md documents LSP Server"
+
+    assert_file_contains "$PROJECT_ROOT/plugin/skills/automate/SKILL.md" \
+        "Agent Team" "STRUCT-23: SKILL.md documents Agent Team"
 }
 
 # ============================================
@@ -117,6 +153,9 @@ run_e2e_tests() {
     run_e2e_test_01
     run_e2e_test_02
     run_e2e_test_03
+    run_e2e_test_04
+    run_e2e_test_05
+    run_e2e_test_06
 
     # Cleanup
     cleanup_sandbox
@@ -138,10 +177,15 @@ run_e2e_test_01() {
     cat > "$settings_file" << 'EOF'
 {
   "hooks": {
-    "PreBash": [
+    "PreToolUse": [
       {
-        "command": "echo $COMMAND | grep -q 'git push' && echo 'Push blocked' && exit 1 || exit 0",
-        "description": "Block git push without authorization"
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -q 'git push'; then echo 'Push blocked' >&2; exit 2; fi"
+          }
+        ]
       }
     ]
   }
@@ -151,7 +195,7 @@ EOF
     # Verify structure
     assert_valid_json "$settings_file" "E2E-01a: settings.json is valid"
     assert_json_has_key "$settings_file" ".hooks" "E2E-01b: has hooks key"
-    assert_json_has_key "$settings_file" ".hooks.PreBash" "E2E-01c: has PreBash hook"
+    assert_json_has_key "$settings_file" ".hooks.PreToolUse" "E2E-01c: has PreToolUse hook"
 }
 
 # E2E TEST-02: Skill creation
@@ -217,6 +261,101 @@ EOF
     assert_file_contains "$agent_file" "model:" "E2E-03d: has model definition"
 }
 
+# E2E TEST-04: MCP server creation
+run_e2e_test_04() {
+    log_info "E2E TEST-04: MCP server creation"
+
+    local mcp_file="$SANDBOX_DIR/.mcp.json"
+
+    # Create expected output
+    cat > "$mcp_file" << 'EOF'
+{
+  "mcpServers": {
+    "my-tools": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@my-org/my-mcp-server"],
+      "env": {
+        "API_KEY": "test-key"
+      }
+    }
+  }
+}
+EOF
+
+    # Verify structure
+    assert_valid_json "$mcp_file" "E2E-04a: .mcp.json is valid JSON"
+    assert_json_has_key "$mcp_file" ".mcpServers" "E2E-04b: has mcpServers key"
+    assert_json_has_key "$mcp_file" '.mcpServers."my-tools".type' "E2E-04c: server has type field"
+}
+
+# E2E TEST-05: LSP server creation
+run_e2e_test_05() {
+    log_info "E2E TEST-05: LSP server creation"
+
+    local lsp_file="$SANDBOX_DIR/.lsp.json"
+
+    # Create expected output
+    cat > "$lsp_file" << 'EOF'
+{
+  "lspServers": {
+    "typescript": {
+      "command": "typescript-language-server",
+      "args": ["--stdio"],
+      "languages": ["typescript", "javascript"]
+    }
+  }
+}
+EOF
+
+    # Verify structure
+    assert_valid_json "$lsp_file" "E2E-05a: .lsp.json is valid JSON"
+    assert_json_has_key "$lsp_file" ".lspServers.typescript.command" "E2E-05b: server has command field"
+    assert_json_has_key "$lsp_file" ".lspServers.typescript.languages" "E2E-05c: server has languages field"
+}
+
+# E2E TEST-06: Agent team creation
+run_e2e_test_06() {
+    log_info "E2E TEST-06: Agent team creation"
+
+    local team_dir="$SANDBOX_DIR/.claude/teams/dev-team"
+    local team_file="$team_dir/config.json"
+
+    # Create expected output
+    mkdir -p "$team_dir"
+    cat > "$team_file" << 'EOF'
+{
+  "name": "dev-team",
+  "description": "Development team for parallel feature work",
+  "agents": [
+    {
+      "name": "frontend",
+      "description": "Handles UI components",
+      "tools": ["Read", "Edit", "Write", "Bash"],
+      "model": "sonnet"
+    },
+    {
+      "name": "backend",
+      "description": "Handles API endpoints",
+      "tools": ["Read", "Edit", "Write", "Bash"],
+      "model": "sonnet"
+    }
+  ],
+  "settings": {
+    "displayMode": "split",
+    "delegateMode": "auto",
+    "requirePlanApproval": true
+  }
+}
+EOF
+
+    # Verify structure
+    assert_valid_json "$team_file" "E2E-06a: team config.json is valid JSON"
+    assert_json_has_key "$team_file" ".name" "E2E-06b: has name field"
+    assert_json_has_key "$team_file" ".description" "E2E-06c: has description field"
+    assert_json_has_key "$team_file" ".agents" "E2E-06d: has agents array"
+}
+
 # ============================================
 # SPECIFIC TEST RUNNER
 # ============================================
@@ -228,10 +367,13 @@ run_specific_test() {
         TEST-01) run_e2e_test_01 ;;
         TEST-02) run_e2e_test_02 ;;
         TEST-03) run_e2e_test_03 ;;
+        TEST-04) run_e2e_test_04 ;;
+        TEST-05) run_e2e_test_05 ;;
+        TEST-06) run_e2e_test_06 ;;
         STRUCT-*) run_structure_tests ;;
         *)
             log_fail "Unknown test: $test_id"
-            echo "Available tests: TEST-01, TEST-02, TEST-03, STRUCT-*"
+            echo "Available tests: TEST-01, TEST-02, TEST-03, TEST-04, TEST-05, TEST-06, STRUCT-*"
             exit 1
             ;;
     esac

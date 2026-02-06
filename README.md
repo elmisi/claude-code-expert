@@ -1,26 +1,29 @@
-# claude-code-expert
+# claude-code-automation
 
 > An expert advisor plugin for Claude Code that helps you decide and create the right automation for your needs.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![CI](https://github.com/elmisi/claude-code-automation/actions/workflows/ci.yml/badge.svg)](https://github.com/elmisi/claude-code-automation/actions/workflows/ci.yml)
 
 ## Why this plugin?
 
-Claude Code offers multiple automation mechanisms: **skills**, **hooks**, **subagents**, **permissions**, **CLAUDE.md**, and **custom commands**. Each serves a different purpose, but choosing the right one isn't always obvious.
+Claude Code offers multiple automation mechanisms: **skills**, **hooks**, **subagents**, **permissions**, **CLAUDE.md**, **custom commands**, **MCP servers**, **LSP servers**, and **agent teams**. Each serves a different purpose, but choosing the right one isn't always obvious.
 
 **Common questions:**
 - Should I use a hook or a skill?
 - When do I need a subagent vs a regular skill?
 - How do I enforce a rule that Claude MUST follow, not just "should" follow?
 - What if I use `--dangerously-skip-permissions`?
+- When should I set up an MCP server vs a hook?
+- Do I need an agent team or just a subagent?
 
 This plugin acts as an expert advisor. You describe what you want to automate, it interviews you to understand your exact needs, then creates the right files in the right places.
 
 ## Installation
 
 ```bash
-/plugin marketplace add elmisi/claude-code-expert
-/plugin install claude-code-expert
+/plugin marketplace add elmisi/claude-code-automation
+/plugin install claude-code-automation
 ```
 
 Then restart Claude Code to activate the plugin.
@@ -28,17 +31,19 @@ Then restart Claude Code to activate the plugin.
 ## Usage
 
 ```bash
-/setup-automation <your topic>
+/automate <your topic>
 ```
 
 ### Examples
 
 ```bash
-/setup-automation semantic versioning on every commit
-/setup-automation block push without explicit approval
-/setup-automation TUI project conventions
-/setup-automation security review for all PRs
-/setup-automation API design guidelines
+/automate semantic versioning on every commit
+/automate block push without explicit approval
+/automate TUI project conventions
+/automate security review for all PRs
+/automate API design guidelines
+/automate integrate GitHub tools via MCP
+/automate set up TypeScript language server
 ```
 
 ## Managing Automations
@@ -47,20 +52,20 @@ All automations created by this plugin are tracked in a registry (`~/.claude/aut
 
 | Command | Description |
 |---------|-------------|
-| `/setup-automation list` | List all tracked automations with options to view, edit, delete, or export |
-| `/setup-automation edit <name>` | Modify an existing automation (name, description, behavior, scope) |
-| `/setup-automation delete <name>` | Remove an automation with confirmation |
-| `/setup-automation export [file]` | Export all automations to a portable JSON file |
-| `/setup-automation import <file>` | Import automations from another machine with conflict resolution |
+| `/automate list` | List all tracked automations with options to view, edit, delete, or export |
+| `/automate edit <name>` | Modify an existing automation (name, description, behavior, scope) |
+| `/automate delete <name>` | Remove an automation with confirmation |
+| `/automate export [file]` | Export all automations to a portable JSON file |
+| `/automate import <file>` | Import automations from another machine with conflict resolution |
 
 ### Export/Import Example
 
 ```bash
 # On machine A: export your automations
-/setup-automation export ~/my-automations.json
+/automate export ~/my-automations.json
 
 # Copy the file to machine B, then import
-/setup-automation import ~/my-automations.json
+/automate import ~/my-automations.json
 ```
 
 When importing, you'll be asked how to handle conflicts if an automation with the same name already exists.
@@ -72,7 +77,9 @@ When importing, you'll be asked how to handle conflicts if an automation with th
 3. **Decides**: Uses a decision matrix to pick the right automation type
 4. **Explains**: Tells you what it chose and why, with alternatives considered
 5. **Creates**: Generates the necessary files in the correct locations
-6. **Verifies**: Shows you how to test and use your new automation
+6. **Validates**: Checks all files against schemas before writing
+7. **Verifies**: Ensures all components of a combination are complete
+8. **Tests**: Shows you how to test and use your new automation
 
 ## Decision Matrix
 
@@ -85,12 +92,17 @@ When importing, you'll be asked how to handle conflicts if an automation with th
 | Separate context for analysis/review | Subagent |
 | Simple global rule | CLAUDE.md |
 | Shortcut for frequent prompt | Custom Command |
+| External tool/service integration | MCP Server |
+| Code intelligence (diagnostics, hover) | LSP Server |
+| Parallel multi-agent orchestration | Agent Team (experimental) |
 
 ## Common Combinations
 
 - **Hook + Skill**: Guaranteed execution (hook) with complex logic (skill)
 - **Permissions + CLAUDE.md**: Technical block + explanation of why
 - **Skill + Subagent**: Workflow definition + isolated deep analysis
+- **MCP Server + Skill**: External tool access + workflow orchestration
+- **Agent Team + Skill**: Multi-agent orchestration + domain knowledge
 
 ## Key Insights
 
@@ -102,15 +114,36 @@ When importing, you'll be asked how to handle conflicts if an automation with th
 ### Permissions Caveat
 If you use `--dangerously-skip-permissions`, permission rules won't work. The plugin will suggest using hooks as an alternative for guaranteed blocks.
 
+### MCP Servers
+MCP servers expose external tools to Claude via the Model Context Protocol. Tools appear as `mcp__<server>__<tool>` and can be matched in hook matchers. Supports `stdio` (local processes) and `sse` (remote HTTP) transports.
+
+### LSP Servers
+LSP servers provide code intelligence features (diagnostics, hover, completions) via the Language Server Protocol. The language server binary must be installed separately.
+
+### Agent Teams (Experimental)
+Agent teams enable parallel multi-agent orchestration. Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`. The feature is experimental and may change.
+
 ### Subagents for Clean Context
 Subagents run in isolated context windows. Use them for:
 - Code review (unbiased, separate from the code that was just written)
 - Deep investigation (reads many files without polluting your main context)
 - Specialized analysis (security, performance, etc.)
 
+## Testing
+
+Tests are split into three categories:
+
+| Type | Command | Description |
+|------|---------|-------------|
+| Structure | `./tests/scripts/run-tests.sh structure` | Fast validation of file structure, JSON validity, schema presence (no Claude needed) |
+| E2E | `./tests/scripts/run-tests.sh e2e` | Fixture-based tests that verify expected output structures (no Claude needed) |
+| Interactive | `./tests/scripts/run-tests.sh interactive` | Runs actual Claude commands to test the skill end-to-end (consumes tokens) |
+
+**Note**: Structure and E2E tests are deterministic and run in CI. Interactive tests are qualitative smoke tests that verify the skill produces reasonable output when run with a real Claude instance. They are not CI-grade deterministic tests.
+
 ## Contributing
 
-Contributions are welcome! Please open an issue or PR.
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, architecture overview, and how to add new automation types.
 
 ## License
 

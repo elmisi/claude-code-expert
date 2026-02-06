@@ -1,0 +1,53 @@
+name: Schema Update
+description: Report a Claude Code change that requires schema updates
+title: "[Schema]: "
+labels: ["schema-update"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template when Claude Code has added or changed features that require updates to the plugin's validation schemas.
+
+  - type: textarea
+    id: what-changed
+    attributes:
+      label: What changed in Claude Code
+      description: Describe what was added, changed, or removed in Claude Code.
+      placeholder: |
+        e.g., "Claude Code added a new hook event called `PreFileWrite` that fires before any file write operation."
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: schemas-affected
+    attributes:
+      label: Which schema(s) need updating
+      description: Select all schemas that are affected by this change.
+      options:
+        - label: hooks.json
+        - label: skills.json
+        - label: subagents.json
+        - label: permissions.json
+        - label: custom-commands.json
+        - label: mcp-servers.json
+        - label: lsp-servers.json
+        - label: agent-teams.json
+        - label: New schema needed
+
+  - type: input
+    id: source-link
+    attributes:
+      label: Source / reference link
+      description: Link to the official documentation, changelog, or announcement where this change is described.
+      placeholder: "https://code.claude.com/docs/..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Any other details, examples, or notes that would help implement the schema update.
+      placeholder: Add any additional context here...
+    validations:
+      required: false

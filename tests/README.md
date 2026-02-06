@@ -1,6 +1,6 @@
-# Tests for claude-code-expert
+# Tests for claude-code-automation
 
-This directory contains tests for the claude-code-expert plugin.
+This directory contains tests for the claude-code-automation plugin.
 
 ## Structure
 

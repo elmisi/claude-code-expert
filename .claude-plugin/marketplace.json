@@ -5,12 +5,12 @@
   },
   "metadata": {
     "description": "Plugins by elmisi",
-    "homepage": "https://github.com/elmisi/claude-code-expert"
+    "homepage": "https://github.com/elmisi/claude-code-automation"
   },
   "plugins": [
     {
-      "name": "claude-code-expert",
-      "version": "1.5.1",
+      "name": "claude-code-automation",
+      "version": "2.0.0",
       "source": "./plugin",
       "description": "Expert advisor that helps you decide and create the right Claude Code automation (skills, hooks, subagents, permissions, etc.)"
     }

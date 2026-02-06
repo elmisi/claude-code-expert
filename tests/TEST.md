@@ -1,6 +1,6 @@
-# Test Cases for claude-code-expert
+# Test Cases for claude-code-automation
 
-This document describes all test scenarios for the `setup-automation` skill.
+This document describes all test scenarios for the `automate` skill.
 
 ## Test Categories
 
@@ -15,7 +15,7 @@ This document describes all test scenarios for the `setup-automation` skill.
 
 ### TEST-01: Hook Only
 **Scenario:** Block all git push commands
-**Input:** `/setup-automation block git push without authorization`
+**Input:** `/automate block git push without authorization`
 **Interview Answers:**
 - Timing: Always, on every action
 - Guaranteed: Yes, MUST happen
@@ -24,15 +24,18 @@ This document describes all test scenarios for the `setup-automation` skill.
 
 **Expected Output:**
 - File: `~/.claude/settings.json`
-- Content: Hook in `PreBash` that blocks `git push`
+- Content: Hook in `PreToolUse` with `Bash` matcher that blocks `git push`
 
 **Verification:**
 ```json
 {
   "hooks": {
-    "PreBash": [{
-      "command": "echo $COMMAND | grep -q 'git push' && exit 1 || exit 0",
-      "description": "Block git push without authorization"
+    "PreToolUse": [{
+      "matcher": "Bash",
+      "hooks": [{
+        "type": "command",
+        "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -q 'git push'; then echo 'Push blocked' >&2; exit 2; fi"
+      }]
     }]
   }
 }
@@ -42,7 +45,7 @@ This document describes all test scenarios for the `setup-automation` skill.
 
 ### TEST-02: Skill (Automatic)
 **Scenario:** API naming conventions applied automatically
-**Input:** `/setup-automation REST API naming conventions`
+**Input:** `/automate REST API naming conventions`
 **Interview Answers:**
 - Timing: Only in certain contexts (when working on API code)
 - Guaranteed: No, guideline
@@ -66,7 +69,7 @@ disable-model-invocation: false
 
 ### TEST-03: Skill (Manual Workflow)
 **Scenario:** Security review workflow invoked on demand
-**Input:** `/setup-automation security code review`
+**Input:** `/automate security code review`
 **Interview Answers:**
 - Timing: Only on explicit user request
 - Guaranteed: No, guideline
@@ -90,7 +93,7 @@ disable-model-invocation: true
 
 ### TEST-04: Subagent
 **Scenario:** Independent code review with clean context
-**Input:** `/setup-automation independent code review for PRs`
+**Input:** `/automate independent code review for PRs`
 **Interview Answers:**
 - Timing: Only on explicit user request
 - Guaranteed: No
@@ -116,7 +119,7 @@ model: sonnet
 
 ### TEST-05: Permissions
 **Scenario:** Allow commit but deny push
-**Input:** `/setup-automation allow commit but require approval for push`
+**Input:** `/automate allow commit but require approval for push`
 **Interview Answers:**
 - Timing: Always
 - Guaranteed: Yes
@@ -141,7 +144,7 @@ model: sonnet
 
 ### TEST-06: CLAUDE.md Rule
 **Scenario:** Simple reminder to run tests before commit
-**Input:** `/setup-automation remind to run tests before commit`
+**Input:** `/automate remind to run tests before commit`
 **Interview Answers:**
 - Timing: Always (but advisory)
 - Guaranteed: No, just a reminder
@@ -162,7 +165,7 @@ Before committing, run tests to ensure nothing is broken.
 
 ### TEST-07: Custom Command
 **Scenario:** Shortcut for running lint and fix
-**Input:** `/setup-automation shortcut for lint and fix`
+**Input:** `/automate shortcut for lint and fix`
 **Interview Answers:**
 - Timing: Only on explicit request
 - Guaranteed: N/A
@@ -188,7 +191,7 @@ Before committing, run tests to ensure nothing is broken.
 
 ### TEST-08: Hook + Skill
 **Scenario:** Semantic versioning on every commit (guaranteed + intelligent)
-**Input:** `/setup-automation semantic versioning on every commit`
+**Input:** `/automate semantic versioning on every commit`
 **Interview Answers:**
 - Timing: Always, every commit
 - Guaranteed: Yes, MUST happen
@@ -209,7 +212,7 @@ Before committing, run tests to ensure nothing is broken.
 
 ### TEST-09: Hook + CLAUDE.md
 **Scenario:** Block writes to migrations folder with explanation
-**Input:** `/setup-automation protect migrations folder from accidental changes`
+**Input:** `/automate protect migrations folder from accidental changes`
 **Interview Answers:**
 - Timing: Always
 - Guaranteed: Yes, MUST block
@@ -222,14 +225,14 @@ Before committing, run tests to ensure nothing is broken.
 - File 2: `./CLAUDE.md` (explains why)
 
 **Verification:**
-- Hook in `PreWrite` blocks paths containing `migrations/`
+- Hook in `PreToolUse` with `Edit|Write` matcher blocks paths containing `migrations/`
 - CLAUDE.md explains migration policy
 
 ---
 
 ### TEST-10: Skill + Subagent
 **Scenario:** Refactoring workflow with deep analysis
-**Input:** `/setup-automation refactoring workflow with impact analysis`
+**Input:** `/automate refactoring workflow with impact analysis`
 **Interview Answers:**
 - Timing: Only on explicit request
 - Guaranteed: No
@@ -250,7 +253,7 @@ Before committing, run tests to ensure nothing is broken.
 
 ### TEST-11: Permissions + CLAUDE.md
 **Scenario:** Block dangerous commands with explanation
-**Input:** `/setup-automation block rm -rf and explain why`
+**Input:** `/automate block rm -rf and explain why`
 **Interview Answers:**
 - Timing: Always
 - Guaranteed: Yes
@@ -275,7 +278,7 @@ Before committing, run tests to ensure nothing is broken.
 
 ### TEST-12: Permissions + Hook (for skip-permissions users)
 **Scenario:** Block dangerous commands even with --dangerously-skip-permissions
-**Input:** `/setup-automation block rm -rf even in skip-permissions mode`
+**Input:** `/automate block rm -rf even in skip-permissions mode`
 **Interview Answers:**
 - Timing: Always
 - Guaranteed: Yes
@@ -296,7 +299,7 @@ Before committing, run tests to ensure nothing is broken.
 
 ### TEST-13: Global Scope
 **Scenario:** Rule applies to all projects
-**Input:** `/setup-automation always use conventional commits`
+**Input:** `/automate always use conventional commits`
 **Interview Answers:**
 - Scope: All projects
 
@@ -311,7 +314,7 @@ Before committing, run tests to ensure nothing is broken.
 
 ### TEST-14: Project Scope
 **Scenario:** Rule applies only to current project
-**Input:** `/setup-automation use tabs for indentation`
+**Input:** `/automate use tabs for indentation`
 **Interview Answers:**
 - Scope: This project only
 
@@ -326,7 +329,7 @@ Before committing, run tests to ensure nothing is broken.
 
 ### TEST-15: Opt-in Pattern
 **Scenario:** Automation activates only if marker file exists
-**Input:** `/setup-automation auto-format on save but only if enabled`
+**Input:** `/automate auto-format on save but only if enabled`
 **Interview Answers:**
 - Timing: Always (when enabled)
 - Opt-in: Yes, need marker file
@@ -346,7 +349,7 @@ Before committing, run tests to ensure nothing is broken.
 
 ### TEST-16: Empty/Invalid Input
 **Scenario:** User provides vague input
-**Input:** `/setup-automation make things better`
+**Input:** `/automate make things better`
 
 **Expected Behavior:**
 - Should ask clarifying questions
@@ -360,7 +363,7 @@ Before committing, run tests to ensure nothing is broken.
 
 ### TEST-17: Conflicting Requirements
 **Scenario:** User wants guaranteed execution without hooks
-**Input:** `/setup-automation always run tests but don't use hooks`
+**Input:** `/automate always run tests but don't use hooks`
 **Interview Answers:**
 - Timing: Always
 - Guaranteed: Yes
@@ -379,7 +382,7 @@ Before committing, run tests to ensure nothing is broken.
 
 ### TEST-18: Existing Automation Detection (Future)
 **Scenario:** Automation with same name already exists
-**Input:** `/setup-automation semver` (when semver already exists)
+**Input:** `/automate semver` (when semver already exists)
 
 **Expected Behavior:**
 - Detect existing automation

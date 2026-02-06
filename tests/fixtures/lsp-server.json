@@ -1,0 +1,7 @@
+{
+  "typescript-language-server": {
+    "command": "typescript-language-server",
+    "args": ["--stdio"],
+    "languages": ["typescript", "javascript", "typescriptreact", "javascriptreact"]
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Valid MCP (Model Context Protocol) server configuration for Claude Code",
+  "location": {
+    "project": ".mcp.json",
+    "global": "~/.claude.json (under mcpServers key)"
+  },
+  "structure": {
+    "description": "JSON object with server entries keyed by server name",
+    "example": {
+      "mcpServers": {
+        "server-name": {
+          "type": "stdio",
+          "command": "/path/to/server",
+          "args": ["--flag", "value"],
+          "env": {
+            "API_KEY": "value"
+          }
+        }
+      }
+    }
+  },
+  "serverTypes": {
+    "stdio": {
+      "description": "Server communicates via stdin/stdout",
+      "required": ["type", "command"],
+      "optional": ["args", "env"]
+    },
+    "sse": {
+      "description": "Server communicates via Server-Sent Events over HTTP",
+      "required": ["type", "url"],
+      "optional": ["env"]
+    }
+  },
+  "fields": {
+    "type": {
+      "type": "string",
+      "validValues": ["stdio", "sse"],
+      "description": "Transport type for the server"
+    },
+    "command": {
+      "type": "string",
+      "description": "Path to the server executable (required for stdio type)"
+    },
+    "args": {
+      "type": "array",
+      "items": "string",
+      "description": "Command-line arguments passed to the server"
+    },
+    "env": {
+      "type": "object",
+      "description": "Environment variables passed to the server process"
+    },
+    "url": {
+      "type": "string",
+      "description": "URL of the SSE endpoint (required for sse type)"
+    }
+  },
+  "toolNaming": {
+    "description": "MCP tools appear with a namespaced convention",
+    "format": "mcp__<server-name>__<tool-name>",
+    "examples": [
+      "mcp__github__create_issue",
+      "mcp__postgres__query",
+      "mcp__filesystem__read_file"
+    ]
+  },
+  "hookIntegration": {
+    "description": "MCP tools can be matched in hooks using patterns",
+    "examples": [
+      "mcp__myserver__.*",
+      "mcp__github__.*",
+      "mcp__.*"
+    ]
+  },
+  "limitations": {
+    "description": "Important limitations to know",
+    "items": [
+      "Background subagents cannot use MCP tools",
+      "MCP servers must be installed and accessible on the system",
+      "Environment variables in env are passed only to the server process",
+      "Server crashes require manual restart (re-enter the session)"
+    ]
+  },
+  "example": {
+    "mcpServers": {
+      "github": {
+        "type": "stdio",
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-github"],
+        "env": {
+          "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+        }
+      },
+      "postgres": {
+        "type": "stdio",
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-postgres", "postgresql://localhost/mydb"]
+      },
+      "remote-api": {
+        "type": "sse",
+        "url": "http://localhost:3001/sse"
+      }
+    }
+  }
+}

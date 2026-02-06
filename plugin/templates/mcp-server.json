@@ -1,0 +1,20 @@
+{
+  "_template": {
+    "name": "MCP Server Configuration",
+    "description": "Configure an MCP server to give Claude access to external tools",
+    "placeholders": {
+      "SERVER_NAME": "Unique identifier for the server",
+      "COMMAND": "Path to the server executable",
+      "ARGS": "Command-line arguments"
+    },
+    "location": ".mcp.json (project) or ~/.claude.json (global, under mcpServers)"
+  },
+  "mcpServers": {
+    "SERVER_NAME": {
+      "type": "stdio",
+      "command": "COMMAND",
+      "args": ["ARGS"],
+      "env": {}
+    }
+  }
+}

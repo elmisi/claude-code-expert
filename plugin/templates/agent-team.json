@@ -1,0 +1,28 @@
+{
+  "_template": {
+    "name": "Agent Team Configuration",
+    "description": "Configure a team of Claude agents that work in parallel",
+    "placeholders": {
+      "TEAM_NAME": "Name for the team",
+      "AGENT_NAME": "Name for each agent",
+      "AGENT_ROLE": "Description of what the agent does"
+    },
+    "location": "~/.claude/teams/{team-name}/config.json",
+    "warning": "Requires CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1 environment variable"
+  },
+  "name": "TEAM_NAME",
+  "description": "TEAM_DESCRIPTION",
+  "agents": [
+    {
+      "name": "AGENT_NAME",
+      "role": "AGENT_ROLE",
+      "tools": ["Read", "Grep", "Glob", "Bash", "Edit", "Write"],
+      "model": "inherit"
+    }
+  ],
+  "settings": {
+    "displayMode": "in-process",
+    "delegateMode": false,
+    "requirePlanApproval": false
+  }
+}

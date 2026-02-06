@@ -16,10 +16,69 @@
     "SubagentStop"
   ],
   "validTypes": ["command", "prompt", "agent"],
+  "hookHandlerFields": {
+    "common": {
+      "type": {
+        "type": "string",
+        "required": true,
+        "validValues": ["command", "prompt", "agent"],
+        "default": "command"
+      },
+      "timeout": {
+        "type": "integer",
+        "description": "Timeout in milliseconds. Defaults: command=600000, prompt=30000, agent=60000",
+        "required": false
+      },
+      "async": {
+        "type": "boolean",
+        "description": "Run hook in background without blocking Claude. Only for command type.",
+        "default": false,
+        "required": false
+      },
+      "statusMessage": {
+        "type": "string",
+        "description": "Custom spinner message shown while the hook runs",
+        "required": false
+      }
+    },
+    "command": {
+      "command": {
+        "type": "string",
+        "required": true,
+        "description": "Shell command to execute"
+      }
+    },
+    "prompt": {
+      "prompt": {
+        "type": "string",
+        "required": true,
+        "description": "Text prompt for single-turn LLM evaluation"
+      },
+      "model": {
+        "type": "string",
+        "required": false,
+        "description": "Model to use for evaluation (default: haiku)",
+        "validValues": ["opus", "sonnet", "haiku"]
+      }
+    },
+    "agent": {
+      "prompt": {
+        "type": "string",
+        "required": true,
+        "description": "Text prompt for multi-turn agent verification"
+      },
+      "model": {
+        "type": "string",
+        "required": false,
+        "description": "Model to use for the agent (default: haiku)",
+        "validValues": ["opus", "sonnet", "haiku"]
+      }
+    }
+  },
   "matchersByEvent": {
     "PreToolUse": {
       "description": "Tool name pattern",
-      "examples": ["Bash", "Edit", "Write", "Edit|Write", "Read", "Glob", "Grep", "mcp__.*", "mcp__github__.*"]
+      "examples": ["Bash", "Edit", "Write", "Edit|Write", "Read", "Glob", "Grep", "WebFetch", "WebSearch", "Task", "NotebookEdit", "mcp__.*", "mcp__github__.*"]
     },
     "PostToolUse": {
       "description": "Tool name pattern (same as PreToolUse)",
@@ -39,7 +98,7 @@
     },
     "SessionEnd": {
       "description": "Why the session ended",
-      "validValues": ["clear", "logout", "prompt_input_exit", "other"]
+      "validValues": ["clear", "logout", "prompt_input_exit", "bypass_permissions_disabled", "other"]
     },
     "Notification": {
       "description": "Notification type",
@@ -48,11 +107,11 @@
     },
     "SubagentStart": {
       "description": "Agent type",
-      "examples": ["Bash", "Explore", "Plan", "custom-agent-name"]
+      "examples": ["Bash", "Explore", "Plan", "general-purpose", "custom-agent-name"]
     },
     "SubagentStop": {
       "description": "Agent type (same as SubagentStart)",
-      "examples": ["Bash", "Explore", "Plan"]
+      "examples": ["Bash", "Explore", "Plan", "general-purpose"]
     },
     "PreCompact": {
       "description": "What triggered compaction",
@@ -65,6 +124,25 @@
     "Stop": {
       "description": "No matcher support - always fires",
       "note": "Matcher is ignored for this event"
+    }
+  },
+  "capabilities": {
+    "updatedInput": {
+      "description": "PreToolUse hooks can modify tool inputs before execution",
+      "events": ["PreToolUse"],
+      "usage": "Return JSON with hookSpecificOutput.updatedInput to rewrite tool arguments",
+      "example": {
+        "hookSpecificOutput": {
+          "updatedInput": {
+            "command": "modified-command"
+          }
+        }
+      }
+    },
+    "permissionDecision": {
+      "description": "PermissionRequest hooks can control permission decisions",
+      "events": ["PermissionRequest"],
+      "usage": "Return hookSpecificOutput.decision with behavior (allow/deny), updatedInput, updatedPermissions, message"
     }
   },
   "exitCodes": {
@@ -91,9 +169,12 @@
     }
   },
   "environmentVariables": {
-    "CLAUDE_TOOL_INPUT": "JSON string of tool input (for PreToolUse)",
+    "CLAUDE_TOOL_INPUT": "JSON string of tool input (for PreToolUse/PostToolUse)",
     "CLAUDE_PROJECT_DIR": "Project directory path",
-    "CLAUDE_SESSION_ID": "Current session ID"
+    "CLAUDE_SESSION_ID": "Current session ID",
+    "CLAUDE_ENV_FILE": "File path for persisting environment variables (SessionStart hooks)",
+    "CLAUDE_PLUGIN_ROOT": "Root directory of the plugin (for referencing bundled scripts)",
+    "CLAUDE_CODE_REMOTE": "Set to 'true' when running in remote/web environments"
   },
   "invalidEvents": {
     "description": "These event names DO NOT EXIST - never use them",

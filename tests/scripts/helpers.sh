@@ -1,5 +1,5 @@
 #!/bin/bash
-# Test helper functions for claude-code-expert
+# Test helper functions for claude-code-automation
 
 # Colors for output
 RED='\033[0;31m'
