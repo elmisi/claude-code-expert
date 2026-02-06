@@ -25,7 +25,7 @@ This plugin acts as an expert advisor. You describe what you want to automate, i
 
 ```bash
 /plugin marketplace add elmisi/claude-code-automation
-/plugin install claude-code-automation
+/plugin install automate
 ```
 
 Then restart Claude Code to activate the plugin.
