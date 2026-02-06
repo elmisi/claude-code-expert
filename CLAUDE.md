@@ -35,10 +35,10 @@ The marketplace.json version is used by Claude Code's plugin update system. If o
 ## Running Tests
 
 ```bash
-# Structure tests — fast, no Claude needed (23 tests)
+# Structure tests — fast, no Claude needed (39 tests)
 ./tests/scripts/run-tests.sh structure
 
-# E2E fixture tests — validates against fixtures, no Claude needed
+# Fixture tests — validates expected output structures, no Claude needed
 ./tests/scripts/run-tests.sh e2e
 
 # Interactive tests — runs actual Claude, consumes tokens

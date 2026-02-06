@@ -187,6 +187,100 @@ Before committing, run tests to ensure nothing is broken.
 
 ---
 
+### TEST-19: MCP Server
+**Scenario:** Integrate GitHub tools via MCP
+**Input:** `/automate integrate GitHub tools via MCP`
+**Interview Answers:**
+- Timing: Always available during sessions
+- External service: Yes, GitHub API
+- Intelligence needed: No, just tool access
+- Scope: This project
+
+**Expected Output:**
+- File: `.mcp.json`
+- Content: MCP server config with stdio type
+
+**Verification:**
+```json
+{
+  "mcpServers": {
+    "github": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_TOKEN": "<token>"
+      }
+    }
+  }
+}
+```
+
+---
+
+### TEST-20: LSP Server
+**Scenario:** Set up TypeScript language server for code intelligence
+**Input:** `/automate set up TypeScript language server`
+**Interview Answers:**
+- Timing: Always available during sessions
+- Code intelligence: Yes, diagnostics and hover
+- Language: TypeScript/JavaScript
+- Scope: This project
+
+**Expected Output:**
+- File: `.lsp.json`
+- Content: LSP server config with command and languages
+
+**Verification:**
+```json
+{
+  "typescript": {
+    "command": "typescript-language-server",
+    "args": ["--stdio"],
+    "languages": ["typescript", "javascript"]
+  }
+}
+```
+
+---
+
+### TEST-21: Agent Team
+**Scenario:** Parallel code review team
+**Input:** `/automate parallel code review with security and performance agents`
+**Interview Answers:**
+- Timing: Only on explicit request
+- Parallel agents: Yes, multiple aspects in parallel
+- Scope: All projects
+
+**Expected Output:**
+- File: `~/.claude/teams/code-review/config.json`
+- Content: Team config with 2 agents
+- Warning: Requires `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`
+
+**Verification:**
+```json
+{
+  "name": "code-review",
+  "description": "Parallel code review team",
+  "agents": [
+    {
+      "name": "security-reviewer",
+      "role": "Review code for security vulnerabilities",
+      "tools": ["Read", "Grep", "Glob", "Bash"],
+      "model": "inherit"
+    },
+    {
+      "name": "performance-reviewer",
+      "role": "Review code for performance issues",
+      "tools": ["Read", "Grep", "Glob", "Bash"],
+      "model": "inherit"
+    }
+  ]
+}
+```
+
+---
+
 ## 2. Combinations
 
 ### TEST-08: Hook + Skill
@@ -404,6 +498,9 @@ Before committing, run tests to ensure nothing is broken.
 - [ ] TEST-05: Permissions
 - [ ] TEST-06: CLAUDE.md Rule
 - [ ] TEST-07: Custom Command
+- [ ] TEST-19: MCP Server
+- [ ] TEST-20: LSP Server
+- [ ] TEST-21: Agent Team
 - [ ] TEST-08: Hook + Skill
 - [ ] TEST-09: Hook + CLAUDE.md
 - [ ] TEST-10: Skill + Subagent

@@ -135,13 +135,13 @@ Subagents run in isolated context windows. Use them for:
 
 Tests are split into three categories:
 
-| Type | Command | Description |
-|------|---------|-------------|
-| Structure | `./tests/scripts/run-tests.sh structure` | Fast validation of file structure, JSON validity, schema presence (no Claude needed) |
-| E2E | `./tests/scripts/run-tests.sh e2e` | Fixture-based tests that verify expected output structures (no Claude needed) |
-| Interactive | `./tests/scripts/run-tests.sh interactive` | Runs actual Claude commands to test the skill end-to-end (consumes tokens) |
+| Type | Command | Tests | Description |
+|------|---------|-------|-------------|
+| Structure | `./tests/scripts/run-tests.sh structure` | 39 | File structure, JSON validity, fixture validation, version sync, negative validation |
+| Fixture | `./tests/scripts/run-tests.sh e2e` | 20 | Creates expected outputs in sandbox and validates their structure |
+| Interactive | `./tests/scripts/run-tests.sh interactive` | 5 | Runs actual Claude commands to test the skill end-to-end (consumes tokens) |
 
-**Note**: Structure and E2E tests are deterministic and run in CI. Interactive tests are qualitative smoke tests that verify the skill produces reasonable output when run with a real Claude instance. They are not CI-grade deterministic tests.
+**Note**: Structure and fixture tests are deterministic and run in CI. Interactive tests are qualitative smoke tests that verify the skill produces reasonable output with a real Claude instance. They are not CI-grade deterministic tests.
 
 ## Contributing
 

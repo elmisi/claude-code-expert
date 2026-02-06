@@ -2,10 +2,11 @@
 # Main test runner for claude-code-automation
 #
 # Usage:
-#   ./run-tests.sh              # Run all tests (structure + e2e)
+#   ./run-tests.sh              # Run all tests (structure + fixture)
 #   ./run-tests.sh structure    # Run only structure tests (fast, no Claude)
-#   ./run-tests.sh e2e          # Run only E2E fixture tests (fast)
-#   ./run-tests.sh interactive  # Run interactive E2E tests (slow, uses Claude, costs tokens)
+#   ./run-tests.sh e2e          # Run only fixture tests (fast, no Claude)
+#   ./run-tests.sh fixture      # Same as e2e
+#   ./run-tests.sh interactive  # Run interactive tests (slow, uses Claude, costs tokens)
 #   ./run-tests.sh full         # Run all tests including interactive
 #   ./run-tests.sh TEST-01      # Run specific test
 
@@ -128,19 +129,101 @@ run_structure_tests() {
 
     assert_file_contains "$PROJECT_ROOT/plugin/skills/automate/SKILL.md" \
         "Agent Team" "STRUCT-23: SKILL.md documents Agent Team"
+
+    # ============================================
+    # FIXTURE VALIDATION (validate-config.sh)
+    # ============================================
+    log_info "Validating fixtures against schemas..."
+
+    local VALIDATE="$PROJECT_ROOT/plugin/scripts/validate-config.sh"
+    chmod +x "$VALIDATE"
+
+    assert_validation_passes "$VALIDATE" hooks \
+        "$PROJECT_ROOT/tests/fixtures/hook-only.json" \
+        "STRUCT-24: hook fixture passes validation"
+
+    assert_validation_passes "$VALIDATE" skill \
+        "$PROJECT_ROOT/tests/fixtures/skill-auto.md" \
+        "STRUCT-25: skill-auto fixture passes validation"
+
+    assert_validation_passes "$VALIDATE" skill \
+        "$PROJECT_ROOT/tests/fixtures/skill-manual.md" \
+        "STRUCT-26: skill-manual fixture passes validation"
+
+    assert_validation_passes "$VALIDATE" subagent \
+        "$PROJECT_ROOT/tests/fixtures/subagent.md" \
+        "STRUCT-27: subagent fixture passes validation"
+
+    assert_validation_passes "$VALIDATE" permissions \
+        "$PROJECT_ROOT/tests/fixtures/permissions.json" \
+        "STRUCT-28: permissions fixture passes validation"
+
+    assert_validation_passes "$VALIDATE" custom-commands \
+        "$PROJECT_ROOT/tests/fixtures/custom-command.json" \
+        "STRUCT-29: custom-command fixture passes validation"
+
+    assert_validation_passes "$VALIDATE" mcp-servers \
+        "$PROJECT_ROOT/tests/fixtures/mcp-server.json" \
+        "STRUCT-30: mcp-server fixture passes validation"
+
+    assert_validation_passes "$VALIDATE" lsp-servers \
+        "$PROJECT_ROOT/tests/fixtures/lsp-server.json" \
+        "STRUCT-31: lsp-server fixture passes validation"
+
+    assert_validation_passes "$VALIDATE" agent-team \
+        "$PROJECT_ROOT/tests/fixtures/agent-team.json" \
+        "STRUCT-32: agent-team fixture passes validation"
+
+    # ============================================
+    # VERSION SYNC
+    # ============================================
+    log_info "Testing version sync..."
+
+    local ver_file=$(cat "$PROJECT_ROOT/VERSION" | tr -d '[:space:]')
+    local ver_plugin=$(jq -r '.version' "$PROJECT_ROOT/plugin/.claude-plugin/plugin.json")
+    local ver_market=$(jq -r '.plugins[0].version' "$PROJECT_ROOT/.claude-plugin/marketplace.json")
+
+    if [ "$ver_file" == "$ver_plugin" ] && [ "$ver_file" == "$ver_market" ]; then
+        log_success "STRUCT-33: version sync — all files show $ver_file"
+    else
+        log_fail "STRUCT-33: version mismatch — VERSION=$ver_file, plugin.json=$ver_plugin, marketplace.json=$ver_market"
+    fi
+
+    # ============================================
+    # NEGATIVE VALIDATION (invalid configs must fail)
+    # ============================================
+    log_info "Testing negative validation (invalid configs rejected)..."
+
+    assert_validation_fails "$VALIDATE" hooks \
+        '{"hooks":{"PreBash":[{"hooks":[{"type":"command","command":"echo test"}]}]}}' \
+        "STRUCT-34: reject invalid hook event (PreBash)"
+
+    assert_validation_fails "$VALIDATE" hooks \
+        '{"hooks":{"PreToolUse":[{"command":"echo test"}]}}' \
+        "STRUCT-35: reject hook missing nested hooks array"
+
+    assert_validation_fails "$VALIDATE" subagent \
+        "$(printf -- '---\nname: test\ndescription: test\nmodel: gpt4\n---\nContent')" \
+        "STRUCT-36: reject subagent with invalid model"
+
+    assert_validation_fails "$VALIDATE" mcp-servers \
+        '{"mcpServers":{"test":{"type":"websocket","command":"test"}}}' \
+        "STRUCT-37: reject MCP server with invalid type"
+
+    assert_validation_fails "$VALIDATE" lsp-servers \
+        '{"typescript":{"command":"tsc"}}' \
+        "STRUCT-38: reject LSP server missing languages"
+
+    assert_validation_fails "$VALIDATE" agent-team \
+        '{"name":"test","description":"test"}' \
+        "STRUCT-39: reject agent team missing agents array"
 }
 
 # ============================================
-# E2E TESTS (Slow, requires Claude)
+# FIXTURE TESTS (no Claude needed)
 # ============================================
-run_e2e_tests() {
-    log_section "E2E Tests (requires Claude)"
-
-    # Check if Claude CLI is available
-    if ! command -v claude &> /dev/null; then
-        log_skip "Claude CLI not found - skipping E2E tests"
-        return 0
-    fi
+run_fixture_tests() {
+    log_section "Fixture Tests"
 
     # Setup
     setup_sandbox
@@ -149,13 +232,13 @@ run_e2e_tests() {
     # Trap to ensure cleanup on exit
     trap restore_global_config EXIT
 
-    # Run individual E2E tests
-    run_e2e_test_01
-    run_e2e_test_02
-    run_e2e_test_03
-    run_e2e_test_04
-    run_e2e_test_05
-    run_e2e_test_06
+    # Run individual fixture tests
+    run_fixture_test_01
+    run_fixture_test_02
+    run_fixture_test_03
+    run_fixture_test_04
+    run_fixture_test_05
+    run_fixture_test_06
 
     # Cleanup
     cleanup_sandbox
@@ -163,12 +246,9 @@ run_e2e_tests() {
     trap - EXIT
 }
 
-# E2E TEST-01: Hook creation
-run_e2e_test_01() {
-    log_info "E2E TEST-01: Hook creation"
-
-    # This test would require interactive input, so we simulate verification
-    # In real E2E, you'd use expect or similar for interactive testing
+# Fixture TEST-01: Hook creation
+run_fixture_test_01() {
+    log_info "Fixture TEST-01: Hook creation"
 
     local settings_file="$SANDBOX_DIR/.claude/settings.json"
 
@@ -193,14 +273,14 @@ run_e2e_test_01() {
 EOF
 
     # Verify structure
-    assert_valid_json "$settings_file" "E2E-01a: settings.json is valid"
-    assert_json_has_key "$settings_file" ".hooks" "E2E-01b: has hooks key"
-    assert_json_has_key "$settings_file" ".hooks.PreToolUse" "E2E-01c: has PreToolUse hook"
+    assert_valid_json "$settings_file" "FIX-01a: settings.json is valid"
+    assert_json_has_key "$settings_file" ".hooks" "FIX-01b: has hooks key"
+    assert_json_has_key "$settings_file" ".hooks.PreToolUse" "FIX-01c: has PreToolUse hook"
 }
 
-# E2E TEST-02: Skill creation
-run_e2e_test_02() {
-    log_info "E2E TEST-02: Skill creation"
+# Fixture TEST-02: Skill creation
+run_fixture_test_02() {
+    log_info "Fixture TEST-02: Skill creation"
 
     local skill_dir="$SANDBOX_DIR/.claude/skills/api-conventions"
     local skill_file="$skill_dir/SKILL.md"
@@ -224,14 +304,14 @@ Apply these conventions when working with API code:
 EOF
 
     # Verify structure
-    assert_file_exists "$skill_file" "E2E-02a: SKILL.md created"
-    assert_valid_frontmatter "$skill_file" "E2E-02b: valid frontmatter"
-    assert_file_contains "$skill_file" "disable-model-invocation: false" "E2E-02c: auto-invocation enabled"
+    assert_file_exists "$skill_file" "FIX-02a: SKILL.md created"
+    assert_valid_frontmatter "$skill_file" "FIX-02b: valid frontmatter"
+    assert_file_contains "$skill_file" "disable-model-invocation: false" "FIX-02c: auto-invocation enabled"
 }
 
-# E2E TEST-03: Subagent creation
-run_e2e_test_03() {
-    log_info "E2E TEST-03: Subagent creation"
+# Fixture TEST-03: Subagent creation
+run_fixture_test_03() {
+    log_info "Fixture TEST-03: Subagent creation"
 
     local agent_file="$SANDBOX_DIR/.claude/agents/code-reviewer.md"
 
@@ -255,15 +335,15 @@ Provide specific line references and suggested fixes.
 EOF
 
     # Verify structure
-    assert_file_exists "$agent_file" "E2E-03a: agent file created"
-    assert_valid_frontmatter "$agent_file" "E2E-03b: valid frontmatter"
-    assert_file_contains "$agent_file" "tools:" "E2E-03c: has tools definition"
-    assert_file_contains "$agent_file" "model:" "E2E-03d: has model definition"
+    assert_file_exists "$agent_file" "FIX-03a: agent file created"
+    assert_valid_frontmatter "$agent_file" "FIX-03b: valid frontmatter"
+    assert_file_contains "$agent_file" "tools:" "FIX-03c: has tools definition"
+    assert_file_contains "$agent_file" "model:" "FIX-03d: has model definition"
 }
 
-# E2E TEST-04: MCP server creation
-run_e2e_test_04() {
-    log_info "E2E TEST-04: MCP server creation"
+# Fixture TEST-04: MCP server creation
+run_fixture_test_04() {
+    log_info "Fixture TEST-04: MCP server creation"
 
     local mcp_file="$SANDBOX_DIR/.mcp.json"
 
@@ -284,44 +364,42 @@ run_e2e_test_04() {
 EOF
 
     # Verify structure
-    assert_valid_json "$mcp_file" "E2E-04a: .mcp.json is valid JSON"
-    assert_json_has_key "$mcp_file" ".mcpServers" "E2E-04b: has mcpServers key"
-    assert_json_has_key "$mcp_file" '.mcpServers."my-tools".type' "E2E-04c: server has type field"
+    assert_valid_json "$mcp_file" "FIX-04a: .mcp.json is valid JSON"
+    assert_json_has_key "$mcp_file" ".mcpServers" "FIX-04b: has mcpServers key"
+    assert_json_has_key "$mcp_file" '.mcpServers."my-tools".type' "FIX-04c: server has type field"
 }
 
-# E2E TEST-05: LSP server creation
-run_e2e_test_05() {
-    log_info "E2E TEST-05: LSP server creation"
+# Fixture TEST-05: LSP server creation
+run_fixture_test_05() {
+    log_info "Fixture TEST-05: LSP server creation"
 
     local lsp_file="$SANDBOX_DIR/.lsp.json"
 
-    # Create expected output
+    # Create expected output (flat format — server name as root key)
     cat > "$lsp_file" << 'EOF'
 {
-  "lspServers": {
-    "typescript": {
-      "command": "typescript-language-server",
-      "args": ["--stdio"],
-      "languages": ["typescript", "javascript"]
-    }
+  "typescript": {
+    "command": "typescript-language-server",
+    "args": ["--stdio"],
+    "languages": ["typescript", "javascript"]
   }
 }
 EOF
 
     # Verify structure
-    assert_valid_json "$lsp_file" "E2E-05a: .lsp.json is valid JSON"
-    assert_json_has_key "$lsp_file" ".lspServers.typescript.command" "E2E-05b: server has command field"
-    assert_json_has_key "$lsp_file" ".lspServers.typescript.languages" "E2E-05c: server has languages field"
+    assert_valid_json "$lsp_file" "FIX-05a: .lsp.json is valid JSON"
+    assert_json_has_key "$lsp_file" ".typescript.command" "FIX-05b: server has command field"
+    assert_json_has_key "$lsp_file" ".typescript.languages" "FIX-05c: server has languages field"
 }
 
-# E2E TEST-06: Agent team creation
-run_e2e_test_06() {
-    log_info "E2E TEST-06: Agent team creation"
+# Fixture TEST-06: Agent team creation
+run_fixture_test_06() {
+    log_info "Fixture TEST-06: Agent team creation"
 
     local team_dir="$SANDBOX_DIR/.claude/teams/dev-team"
     local team_file="$team_dir/config.json"
 
-    # Create expected output
+    # Create expected output (agents use "role" field)
     mkdir -p "$team_dir"
     cat > "$team_file" << 'EOF'
 {
@@ -330,30 +408,30 @@ run_e2e_test_06() {
   "agents": [
     {
       "name": "frontend",
-      "description": "Handles UI components",
+      "role": "Handles UI components",
       "tools": ["Read", "Edit", "Write", "Bash"],
       "model": "sonnet"
     },
     {
       "name": "backend",
-      "description": "Handles API endpoints",
+      "role": "Handles API endpoints",
       "tools": ["Read", "Edit", "Write", "Bash"],
       "model": "sonnet"
     }
   ],
   "settings": {
-    "displayMode": "split",
-    "delegateMode": "auto",
+    "displayMode": "in-process",
+    "delegateMode": false,
     "requirePlanApproval": true
   }
 }
 EOF
 
     # Verify structure
-    assert_valid_json "$team_file" "E2E-06a: team config.json is valid JSON"
-    assert_json_has_key "$team_file" ".name" "E2E-06b: has name field"
-    assert_json_has_key "$team_file" ".description" "E2E-06c: has description field"
-    assert_json_has_key "$team_file" ".agents" "E2E-06d: has agents array"
+    assert_valid_json "$team_file" "FIX-06a: team config.json is valid JSON"
+    assert_json_has_key "$team_file" ".name" "FIX-06b: has name field"
+    assert_json_has_key "$team_file" ".description" "FIX-06c: has description field"
+    assert_json_has_key "$team_file" ".agents" "FIX-06d: has agents array"
 }
 
 # ============================================
@@ -364,16 +442,16 @@ run_specific_test() {
     log_section "Running specific test: $test_id"
 
     case "$test_id" in
-        TEST-01) run_e2e_test_01 ;;
-        TEST-02) run_e2e_test_02 ;;
-        TEST-03) run_e2e_test_03 ;;
-        TEST-04) run_e2e_test_04 ;;
-        TEST-05) run_e2e_test_05 ;;
-        TEST-06) run_e2e_test_06 ;;
+        TEST-01) run_fixture_test_01 ;;
+        TEST-02) run_fixture_test_02 ;;
+        TEST-03) run_fixture_test_03 ;;
+        TEST-04) run_fixture_test_04 ;;
+        TEST-05) run_fixture_test_05 ;;
+        TEST-06) run_fixture_test_06 ;;
         STRUCT-*) run_structure_tests ;;
         *)
             log_fail "Unknown test: $test_id"
-            echo "Available tests: TEST-01, TEST-02, TEST-03, TEST-04, TEST-05, TEST-06, STRUCT-*"
+            echo "Available tests: TEST-01..06, STRUCT-*"
             exit 1
             ;;
     esac
@@ -383,7 +461,7 @@ run_specific_test() {
 # INTERACTIVE TESTS (runs actual Claude)
 # ============================================
 run_interactive_tests() {
-    log_section "Interactive E2E Tests"
+    log_section "Interactive Tests (uses Claude, costs tokens)"
     log_info "Running tests that use actual Claude commands..."
     log_info "This will consume tokens and may take several minutes."
 
@@ -401,27 +479,27 @@ main() {
     case "$TEST_TYPE" in
         all)
             run_structure_tests
-            run_e2e_tests
+            run_fixture_tests
             ;;
         structure)
             run_structure_tests
             ;;
-        e2e)
-            run_e2e_tests
+        e2e|fixture)
+            run_fixture_tests
             ;;
         interactive)
             run_interactive_tests
             ;;
         full)
             run_structure_tests
-            run_e2e_tests
+            run_fixture_tests
             run_interactive_tests
             ;;
         TEST-*|STRUCT-*)
             run_specific_test "$TEST_TYPE"
             ;;
         *)
-            echo "Usage: $0 [all|structure|e2e|interactive|full|TEST-XX]"
+            echo "Usage: $0 [all|structure|e2e|fixture|interactive|full|TEST-XX|STRUCT-XX]"
             exit 1
             ;;
     esac

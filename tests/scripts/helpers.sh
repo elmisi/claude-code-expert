@@ -243,6 +243,38 @@ run_claude_headless() {
     return $exit_code
 }
 
+# Assert validation passes (validate-config.sh returns 0)
+assert_validation_passes() {
+    local script="$1"
+    local type="$2"
+    local file="$3"
+    local test_name="$4"
+
+    if "$script" "$type" "$file" > /dev/null 2>&1; then
+        log_success "$test_name"
+        return 0
+    else
+        log_fail "$test_name: validation unexpectedly failed"
+        return 1
+    fi
+}
+
+# Assert validation fails (validate-config.sh returns non-zero)
+assert_validation_fails() {
+    local script="$1"
+    local type="$2"
+    local content="$3"
+    local test_name="$4"
+
+    if echo "$content" | "$script" "$type" - > /dev/null 2>&1; then
+        log_fail "$test_name: validation should have failed but passed"
+        return 1
+    else
+        log_success "$test_name"
+        return 0
+    fi
+}
+
 # Print test summary
 print_summary() {
     echo ""
