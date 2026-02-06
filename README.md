@@ -5,6 +5,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/elmisi/claude-code-automation/actions/workflows/ci.yml/badge.svg)](https://github.com/elmisi/claude-code-automation/actions/workflows/ci.yml)
 
+**Schemas updated: Feb 2026** — Covers all Claude Code automation types including MCP Servers, LSP Servers, and Agent Teams.
+
 ## Why this plugin?
 
 Claude Code offers multiple automation mechanisms: **skills**, **hooks**, **subagents**, **permissions**, **CLAUDE.md**, **custom commands**, **MCP servers**, **LSP servers**, and **agent teams**. Each serves a different purpose, but choosing the right one isn't always obvious.
