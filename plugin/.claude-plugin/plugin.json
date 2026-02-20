@@ -1,6 +1,6 @@
 {
   "name": "automate",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Expert advisor that helps you decide and create the right Claude Code automation (skills, hooks, subagents, permissions, etc.)",
   "author": {
     "name": "elmisi"
