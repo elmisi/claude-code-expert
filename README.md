@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![CI](https://github.com/elmisi/claude-code-automation/actions/workflows/ci.yml/badge.svg)](https://github.com/elmisi/claude-code-automation/actions/workflows/ci.yml)
 
-**Schemas updated: Feb 2026** — Covers all Claude Code automation types including MCP Servers, LSP Servers, and Agent Teams.
+**Schemas updated: Feb 2026** — Covers all Claude Code automation types including MCP Servers, LSP Servers, and Agent Teams. Now with 15 hook events and a `verify` health-check command.
 
 ## Why this plugin?
 
@@ -91,6 +91,7 @@ All automations created by this plugin are tracked in a registry (`~/.claude/aut
 | `/automate delete <name>` | Remove an automation with confirmation |
 | `/automate export [file]` | Export all automations to a portable JSON file |
 | `/automate import <file>` | Import automations from another machine with conflict resolution |
+| `/automate verify` | Health-check all registered automations — detects missing files or hook entries and offers to repair them |
 
 ### Export/Import Example
 
@@ -169,7 +170,7 @@ Tests are split into three categories:
 
 | Type | Command | Tests | Description |
 |------|---------|-------|-------------|
-| Structure | `./tests/scripts/run-tests.sh structure` | 39 | File structure, JSON validity, fixture validation, version sync, negative validation |
+| Structure | `./tests/scripts/run-tests.sh structure` | 42 | File structure, JSON validity, fixture validation, version sync, negative validation |
 | Fixture | `./tests/scripts/run-tests.sh e2e` | 20 | Creates expected outputs in sandbox and validates their structure |
 | Interactive | `./tests/scripts/run-tests.sh interactive` | 5 | Runs actual Claude commands to test the skill end-to-end (consumes tokens) |
 
