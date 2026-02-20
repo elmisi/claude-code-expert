@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-02-20
+
+### Added
+- **3 new hook events**: `TeammateIdle` (agent teammate idle), `TaskCompleted` (task marked done), `ConfigChange` (config file changed during session) — added to schema, validate-config.sh, and SKILL.md
+- **`/automate verify` command**: health-check all registered automations, detect missing files/hook entries, and offer to repair them
+- **settings.json merge algorithm**: SKILL.md Step 4 now has an explicit deep-merge procedure to prevent clobbering existing hooks when adding or removing entries
+- Structure tests STRUCT-40, STRUCT-41, STRUCT-42 for the 3 new hook events
+
+### Changed
+- CLAUDE.md: updated hook event count from 12 to 15, added new events to the inline list, noted that `TeammateIdle`/`TaskCompleted` only support exit code 2
+
 ## [2.0.1] - 2026-02-20
 
 ### Changed

@@ -54,7 +54,7 @@ The marketplace.json version is used by Claude Code's plugin update system. If o
 ## Running Tests
 
 ```bash
-# Structure tests — fast, no Claude needed (39 tests, IDs: STRUCT-01..STRUCT-39)
+# Structure tests — fast, no Claude needed (42 tests, IDs: STRUCT-01..STRUCT-42)
 ./tests/scripts/run-tests.sh structure
 
 # Fixture tests — validates expected output structures, no Claude needed (IDs: TEST-01..TEST-06)
@@ -88,7 +88,7 @@ plugin/scripts/validate-config.sh <type> <content>
 
 Schemas in `plugin/schemas/` define what's valid. Key gotchas:
 
-- **Hook events**: 12 valid events (`PreToolUse`, `PostToolUse`, `SessionStart`, `SessionEnd`, `UserPromptSubmit`, `PermissionRequest`, `Notification`, `Stop`, `PreCompact`, `SubagentStart`, `SubagentStop`, `PostToolUseFailure`). NEVER use `PreCommit`, `PostCommit`, `PreBash`, `PostBash`, `BeforeToolUse`, `AfterToolUse` — they don't exist.
+- **Hook events**: 15 valid events (`PreToolUse`, `PostToolUse`, `SessionStart`, `SessionEnd`, `UserPromptSubmit`, `PermissionRequest`, `Notification`, `Stop`, `PreCompact`, `SubagentStart`, `SubagentStop`, `PostToolUseFailure`, `TeammateIdle`, `TaskCompleted`, `ConfigChange`). NEVER use `PreCommit`, `PostCommit`, `PreBash`, `PostBash`, `BeforeToolUse`, `AfterToolUse` — they don't exist. Note: `TeammateIdle` and `TaskCompleted` only support exit code 2 (no JSON hookSpecificOutput).
 - **Hook exit codes**: `0` = allow, `2` = block (stderr becomes feedback), anything else = allow but log error. Exit code 1 does NOT block.
 - **Hook structure**: Nested — `hooks.EventName[].hooks[]` (array inside array), not flat.
 - **Hook handler types**: `command` (shell script), `prompt` (single-turn LLM), `agent` (multi-turn LLM). Fields: `async`, `timeout`, `statusMessage`, `model`.

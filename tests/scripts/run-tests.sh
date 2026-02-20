@@ -217,6 +217,18 @@ run_structure_tests() {
     assert_validation_fails "$VALIDATE" agent-team \
         '{"name":"test","description":"test"}' \
         "STRUCT-39: reject agent team missing agents array"
+
+    assert_validation_passes "$VALIDATE" hooks \
+        '{"hooks":{"TeammateIdle":[{"hooks":[{"type":"command","command":"exit 2"}]}]}}' \
+        "STRUCT-40: accept TeammateIdle hook event"
+
+    assert_validation_passes "$VALIDATE" hooks \
+        '{"hooks":{"TaskCompleted":[{"hooks":[{"type":"command","command":"exit 2"}]}]}}' \
+        "STRUCT-41: accept TaskCompleted hook event"
+
+    assert_validation_passes "$VALIDATE" hooks \
+        '{"hooks":{"ConfigChange":[{"matcher":"user_settings","hooks":[{"type":"command","command":"echo changed"}]}]}}' \
+        "STRUCT-42: accept ConfigChange hook event"
 }
 
 # ============================================

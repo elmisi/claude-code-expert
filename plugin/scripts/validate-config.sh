@@ -65,6 +65,9 @@ VALID_HOOK_EVENTS=(
     "PreCompact"
     "SubagentStart"
     "SubagentStop"
+    "TeammateIdle"
+    "TaskCompleted"
+    "ConfigChange"
 )
 
 # Invalid/non-existent hook events (common mistakes)

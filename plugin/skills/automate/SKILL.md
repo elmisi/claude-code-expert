@@ -21,6 +21,7 @@ Parse `$ARGUMENTS` to determine the action:
 | `delete <name>` | Go to **Delete Automation** |
 | `export [file]` | Go to **Export Automations** |
 | `import <file>` | Go to **Import Automations** |
+| `verify` | Go to **Verify Automations** |
 | Anything else | Go to **Create New Automation** |
 
 ---
@@ -148,6 +149,34 @@ Arguments: `import <file>`
 4. Create the files in appropriate locations
 5. Add to registry with `created-by: automate` marker
 6. Show summary of imported automations
+
+---
+
+# Verify Automations
+
+Arguments: `verify`
+
+1. Read `~/.claude/automations-registry.json`
+2. If empty/missing: report no automations registered
+3. For each automation, check:
+   - **hook**: (a) script file exists at registry `path`; (b) settings.json contains
+     a matching entry under `.hooks` with `_meta.createdBy: "automate"`
+   - **skill/subagent/claude-md**: file exists at `path`
+   - **permission/custom-command**: settings.json contains the entry
+   - **mcp-server/lsp-server/agent-team**: config file exists at `path`
+4. Show status table:
+   ```
+   | Name        | Type  | Status    | Issue               |
+   |-------------|-------|-----------|---------------------|
+   | semver-hook | hook  | ✓ healthy |                     |
+   | semver      | skill | ✗ missing | File not found      |
+   ```
+5. If any unhealthy → use AskUserQuestion: "Repair missing components?"
+   - If yes: for each missing component, re-run the Step 4 creation logic for that type
+     (for hooks: re-add to settings.json using the merge algorithm)
+   - For file-based types (skill, subagent, etc.): warn that content is lost and offer
+     to recreate with the same name/description from registry metadata
+6. After repair, run verify again and confirm all healthy
 
 ---
 
@@ -391,6 +420,9 @@ Same pattern:
 - `Stop` - When Claude finishes responding (no matcher)
 - `PreCompact` - Before context compaction (matchers: manual, auto)
 - `SubagentStart`, `SubagentStop` - Subagent lifecycle
+- `TeammateIdle` - Agent team teammate about to go idle (matchers: agent name; exit 2 only)
+- `TaskCompleted` - Task being marked completed (no matcher; exit 2 only)
+- `ConfigChange` - Config file changed during session (matchers: user_settings, project_settings, local_settings, policy_settings, skills)
 
 **NEVER use these (they don't exist):**
 - PreCommit, PostCommit, PreBash, PostBash, PreEdit, PostEdit, BeforeToolUse, AfterToolUse
@@ -413,6 +445,28 @@ Same pattern:
   }
 }
 ```
+
+#### REQUIRED: settings.json merge algorithm
+
+NEVER overwrite settings.json. Always merge.
+
+**Adding a hook:**
+1. Read entire `~/.claude/settings.json` (use `{}` if it doesn't exist)
+2. Append new matcher object to `.hooks["EventName"][]`
+   - If `.hooks` doesn't exist → set to `{}`
+   - If `.hooks["EventName"]` doesn't exist → set to `[]`
+   - Append, never replace
+3. Write complete merged JSON back
+4. Read back and confirm the entry is present
+
+**Removing a hook:**
+1. Read entire settings.json
+2. Remove ONLY the specific array element whose inner `hooks[].command` matches
+   (or match via `_meta.createdBy: "automate"` + automation name)
+3. If the event array becomes empty → remove the event key
+4. Write back
+
+**Never write a partial `hooks` object — always include all existing events.**
 
 **Hook handler fields:**
 - `type` (string, required): `command`, `prompt`, or `agent`
@@ -731,7 +785,7 @@ Only after ALL verifications pass:
 - CLAUDE.md instructions are advisory, not guaranteed. If certainty is needed, use Hook.
 - Hooks are scripts, they don't have access to Claude's intelligence. For complex logic, combine Hook + Skill.
 - Subagents consume extra tokens but preserve the main context.
-- Valid hook events: SessionStart, SessionEnd, UserPromptSubmit, PreToolUse, PostToolUse, PostToolUseFailure, PermissionRequest, Notification, Stop, PreCompact, SubagentStart, SubagentStop
+- Valid hook events: SessionStart, SessionEnd, UserPromptSubmit, PreToolUse, PostToolUse, PostToolUseFailure, PermissionRequest, Notification, Stop, PreCompact, SubagentStart, SubagentStop, TeammateIdle, TaskCompleted, ConfigChange
 - All automations are tracked in `~/.claude/automations-registry.json` for management with list/edit/delete/export/import.
 - Agent Teams require `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` and are experimental. The feature may change or be removed.
 - MCP tools appear as `mcp__<server>__<tool>` in Claude and can be matched in hooks using `"matcher": "mcp__servername__.*"`.

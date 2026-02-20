@@ -13,7 +13,10 @@
     "Stop",
     "PreCompact",
     "SubagentStart",
-    "SubagentStop"
+    "SubagentStop",
+    "TeammateIdle",
+    "TaskCompleted",
+    "ConfigChange"
   ],
   "validTypes": ["command", "prompt", "agent"],
   "hookHandlerFields": {
@@ -124,6 +127,20 @@
     "Stop": {
       "description": "No matcher support - always fires",
       "note": "Matcher is ignored for this event"
+    },
+    "TeammateIdle": {
+      "description": "Agent team teammate about to go idle",
+      "examples": ["agent-name", "frontend", "backend"],
+      "note": "Matcher is the agent name. Exit 2 only (no hookSpecificOutput support)"
+    },
+    "TaskCompleted": {
+      "description": "Task being marked completed",
+      "note": "No matcher support. Exit 2 only (no hookSpecificOutput support)"
+    },
+    "ConfigChange": {
+      "description": "Config file changed during session",
+      "validValues": ["user_settings", "project_settings", "local_settings", "policy_settings", "skills"],
+      "note": "Matcher is the config type that changed"
     }
   },
   "capabilities": {
