@@ -92,7 +92,7 @@ Schemas in `plugin/schemas/` define what's valid. Key gotchas:
 - **Hook exit codes**: `0` = allow, `2` = block (stderr becomes feedback), anything else = allow but log error. Exit code 1 does NOT block.
 - **Hook structure**: Nested — `hooks.EventName[].hooks[]` (array inside array), not flat.
 - **Hook handler types**: `command` (shell script), `prompt` (single-turn LLM), `agent` (multi-turn LLM). Fields: `async`, `timeout`, `statusMessage`, `model`.
-- **Hook environment variables**: `CLAUDE_TOOL_INPUT` (JSON of tool inputs), `CLAUDE_PROJECT_DIR`, `CLAUDE_SESSION_ID`, `CLAUDE_ENV_FILE`, `CLAUDE_PLUGIN_ROOT`, `CLAUDE_CODE_REMOTE`.
+- **Hook input**: Tool input is passed via **stdin** as JSON (NOT via environment variables). Read with `cat | jq -r '.tool_input.file_path'`. Available env vars (without tool input): `CLAUDE_PROJECT_DIR`, `CLAUDE_SESSION_ID`, `CLAUDE_ENV_FILE`, `CLAUDE_PLUGIN_ROOT`, `CLAUDE_CODE_REMOTE`.
 - **Hook special outputs**: `PreToolUse` hooks can modify tool inputs via stdout JSON `{"hookSpecificOutput": {"updatedInput": {...}}}`. `PermissionRequest` hooks can control the decision via `{"hookSpecificOutput": {"decision": "allow"|"deny", "reason": "..."}}`.
 - **Permissions**: Don't work with `--dangerously-skip-permissions`. Use hooks (exit 2) as a guaranteed alternative.
 - **Skills**: `disable-model-invocation: true` = manual only (invoked via `/skill-name`); `false` = Claude auto-applies when relevant. Optional: `context: fork`, `hooks`.

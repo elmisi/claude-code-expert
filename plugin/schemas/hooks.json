@@ -185,8 +185,25 @@
       }
     }
   },
+  "hookInput": {
+    "description": "Hook commands receive a JSON object via stdin (NOT via environment variables)",
+    "method": "stdin",
+    "structure": {
+      "session_id": "Current session identifier",
+      "transcript_path": "Path to session transcript file",
+      "cwd": "Current working directory",
+      "permission_mode": "Current permission mode",
+      "hook_event_name": "The event that triggered the hook (e.g. PostToolUse)",
+      "tool_name": "Name of the tool (for PreToolUse/PostToolUse events)",
+      "tool_input": "Object with the tool's input parameters (e.g. file_path, command)",
+      "tool_response": "Object with the tool's response (PostToolUse only)",
+      "tool_use_id": "Unique identifier for the tool invocation"
+    },
+    "example_read": "cat | jq -r '.tool_input.file_path'",
+    "note": "CLAUDE_TOOL_INPUT and TOOL_INPUT env vars are NOT set. Always read from stdin."
+  },
   "environmentVariables": {
-    "CLAUDE_TOOL_INPUT": "JSON string of tool input (for PreToolUse/PostToolUse)",
+    "description": "These env vars are available but do NOT include tool input",
     "CLAUDE_PROJECT_DIR": "Project directory path",
     "CLAUDE_SESSION_ID": "Current session ID",
     "CLAUDE_ENV_FILE": "File path for persisting environment variables (SessionStart hooks)",

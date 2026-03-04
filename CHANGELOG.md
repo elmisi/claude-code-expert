@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.1] - 2026-03-04
+
+### Fixed
+- **Hook input method**: documented that tool input is passed via **stdin** (JSON), not via `CLAUDE_TOOL_INPUT` or `TOOL_INPUT` environment variables. Previous documentation was incorrect — hooks using env vars silently failed.
+- Updated all hook templates (`hook-block-command.json`, `hook-protect-files.json`, `hook-post-edit-format.json`) to read from stdin with `cat | jq`
+- Updated hook examples in `claude-code-reference.md`, `SKILL.md`, `CLAUDE.md`, test fixtures, and test scripts
+- Added `hookInput` section to `hooks.json` schema documenting the stdin JSON structure
+- Regenerated all HTML documentation
+
 ## [2.1.0] - 2026-02-20
 
 ### Added

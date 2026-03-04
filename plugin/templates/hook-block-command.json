@@ -14,7 +14,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -q 'PATTERN'; then echo 'Blocked: REASON' >&2; exit 2; fi"
+            "command": "if cat | jq -r '.tool_input.command' | grep -q 'PATTERN'; then echo 'Blocked: REASON' >&2; exit 2; fi"
           }
         ]
       }

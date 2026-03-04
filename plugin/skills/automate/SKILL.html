@@ -1,0 +1,1162 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="description" content="Expert advisor that helps decide and create the right Claude Code automation" />
+  <title> </title>
+  <style>
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title"> </h1>
+</header>
+<h1 id="claude-code-automation">Claude Code Automation</h1>
+<p>Arguments: $ARGUMENTS</p>
+<hr />
+<h2 id="command-router">Command Router</h2>
+<p>Parse <code>$ARGUMENTS</code> to determine the action:</p>
+<table>
+<thead>
+<tr class="header">
+<th>Pattern</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>list</code></td>
+<td>Go to <strong>List Automations</strong></td>
+</tr>
+<tr class="even">
+<td><code>edit &lt;name&gt;</code></td>
+<td>Go to <strong>Edit Automation</strong></td>
+</tr>
+<tr class="odd">
+<td><code>delete &lt;name&gt;</code></td>
+<td>Go to <strong>Delete Automation</strong></td>
+</tr>
+<tr class="even">
+<td><code>export [file]</code></td>
+<td>Go to <strong>Export Automations</strong></td>
+</tr>
+<tr class="odd">
+<td><code>import &lt;file&gt;</code></td>
+<td>Go to <strong>Import Automations</strong></td>
+</tr>
+<tr class="even">
+<td><code>verify</code></td>
+<td>Go to <strong>Verify Automations</strong></td>
+</tr>
+<tr class="odd">
+<td>Anything else</td>
+<td>Go to <strong>Create New Automation</strong></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h1 id="list-automations">List Automations</h1>
+<p>Read the registry file:
+<code>~/.claude/automations-registry.json</code></p>
+<p>If it doesn’t exist, say: &gt; “No automations registry found. Create
+automations with <code>/automate &lt;description&gt;</code> to start
+tracking.”</p>
+<p>If it exists, display a table:</p>
+<pre><code>┌─────────────────┬────────┬────────┬─────────────────────────────────────┐
+│ Name            │ Type   │ Scope  │ Description                         │
+├─────────────────┼────────┼────────┼─────────────────────────────────────┤
+│ icon-prompt     │ skill  │ global │ Generate prompts for AI image gen.  │
+└─────────────────┴────────┴────────┴─────────────────────────────────────┘</code></pre>
+<p>Then use AskUserQuestion to offer actions:</p>
+<pre><code>What would you like to do?
+- View details of an automation
+- Edit an automation
+- Delete an automation
+- Export all automations
+- Create a new automation
+- Nothing, just browsing</code></pre>
+<p>Handle the selected action accordingly.</p>
+<hr />
+<h1 id="edit-automation">Edit Automation</h1>
+<p>Arguments: <code>edit &lt;name&gt;</code></p>
+<ol type="1">
+<li>Read the registry to find the automation by name</li>
+<li>If not found, show error and list available automations</li>
+<li>If found, read the actual file from the path in the registry</li>
+<li>Use AskUserQuestion to ask what to change:
+<ul>
+<li>Name</li>
+<li>Description</li>
+<li>Behavior/content</li>
+<li>Scope (move from project to global or vice versa)</li>
+</ul></li>
+<li>Make the changes to the file</li>
+<li>Update the registry with new <code>modified</code> timestamp</li>
+<li>Show the diff and confirm</li>
+</ol>
+<hr />
+<h1 id="delete-automation">Delete Automation</h1>
+<p>Arguments: <code>delete &lt;name&gt;</code></p>
+<ol type="1">
+<li>Read the registry to find the automation by name</li>
+<li>If not found, show error and list available automations</li>
+<li>If found, show the automation details and ask for confirmation</li>
+<li>Use AskUserQuestion with options:
+<ul>
+<li>“Yes, delete it”</li>
+<li>“No, keep it”</li>
+</ul></li>
+<li>If confirmed:
+<ul>
+<li>Delete the file(s) (for skills: entire folder, for hooks: remove
+from settings.json)</li>
+<li>Remove from registry</li>
+<li>Show confirmation</li>
+</ul></li>
+<li>If not confirmed, cancel</li>
+</ol>
+<hr />
+<h1 id="export-automations">Export Automations</h1>
+<p>Arguments: <code>export [file]</code></p>
+<p>Default file: <code>~/.claude/automations-export.json</code></p>
+<ol type="1">
+<li>Read the registry</li>
+<li>For each automation, read its content</li>
+<li>Create export file:</li>
+</ol>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;exportVersion&quot;</span><span class="fu">:</span> <span class="st">&quot;1.0&quot;</span><span class="fu">,</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;exportDate&quot;</span><span class="fu">:</span> <span class="st">&quot;YYYY-MM-DD&quot;</span><span class="fu">,</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;source&quot;</span><span class="fu">:</span> <span class="st">&quot;machine-name or user identifier&quot;</span><span class="fu">,</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;automations&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;icon-prompt&quot;</span><span class="fu">,</span></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;type&quot;</span><span class="fu">:</span> <span class="st">&quot;skill&quot;</span><span class="fu">,</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;scope&quot;</span><span class="fu">:</span> <span class="st">&quot;global&quot;</span><span class="fu">,</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;description&quot;</span><span class="fu">:</span> <span class="st">&quot;...&quot;</span><span class="fu">,</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;files&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>        <span class="fu">{</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>          <span class="dt">&quot;relativePath&quot;</span><span class="fu">:</span> <span class="st">&quot;SKILL.md&quot;</span><span class="fu">,</span></span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>          <span class="dt">&quot;content&quot;</span><span class="fu">:</span> <span class="st">&quot;--- full file content ---&quot;</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>        <span class="fu">}</span></span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>      <span class="ot">]</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span></span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<ol start="4" type="1">
+<li>Write the file</li>
+<li>Show summary: “Exported N automations to <file>”</li>
+<li>Suggest: “You can import this on another machine with
+<code>/automate import &lt;file&gt;</code>”</li>
+</ol>
+<hr />
+<h1 id="import-automations">Import Automations</h1>
+<p>Arguments: <code>import &lt;file&gt;</code></p>
+<ol type="1">
+<li>Read the import file</li>
+<li>Validate format (version, required fields)</li>
+<li>For each automation in the file:
+<ol type="a">
+<li>Check if it already exists (by name)</li>
+<li>If exists, use AskUserQuestion:
+<ul>
+<li>“Overwrite existing”</li>
+<li>“Rename to <name>-imported”</li>
+<li>“Skip this automation”</li>
+</ul></li>
+<li>If not exists, show preview and ask confirmation</li>
+</ol></li>
+<li>Create the files in appropriate locations</li>
+<li>Add to registry with <code>created-by: automate</code> marker</li>
+<li>Show summary of imported automations</li>
+</ol>
+<hr />
+<h1 id="verify-automations">Verify Automations</h1>
+<p>Arguments: <code>verify</code></p>
+<ol type="1">
+<li><p>Read <code>~/.claude/automations-registry.json</code></p></li>
+<li><p>If empty/missing: report no automations registered</p></li>
+<li><p>For each automation, check:</p>
+<ul>
+<li><strong>hook</strong>: (a) script file exists at registry
+<code>path</code>; (b) settings.json contains a matching entry under
+<code>.hooks</code> with <code>_meta.createdBy: "automate"</code></li>
+<li><strong>skill/subagent/claude-md</strong>: file exists at
+<code>path</code></li>
+<li><strong>permission/custom-command</strong>: settings.json contains
+the entry</li>
+<li><strong>mcp-server/lsp-server/agent-team</strong>: config file
+exists at <code>path</code></li>
+</ul></li>
+<li><p>Show status table:</p>
+<pre><code>| Name        | Type  | Status    | Issue               |
+|-------------|-------|-----------|---------------------|
+| semver-hook | hook  | ✓ healthy |                     |
+| semver      | skill | ✗ missing | File not found      |</code></pre></li>
+<li><p>If any unhealthy → use AskUserQuestion: “Repair missing
+components?”</p>
+<ul>
+<li>If yes: for each missing component, re-run the Step 4 creation logic
+for that type (for hooks: re-add to settings.json using the merge
+algorithm)</li>
+<li>For file-based types (skill, subagent, etc.): warn that content is
+lost and offer to recreate with the same name/description from registry
+metadata</li>
+</ul></li>
+<li><p>After repair, run verify again and confirm all healthy</p></li>
+</ol>
+<hr />
+<h1 id="create-new-automation">Create New Automation</h1>
+<p>(Original workflow - proceed if $ARGUMENTS is not a known
+command)</p>
+<hr />
+<h2 id="critical-rule-complete-all-components">CRITICAL RULE: COMPLETE
+ALL COMPONENTS</h2>
+<p><strong>This skill MUST create EVERYTHING it promises. Partial
+implementations are FORBIDDEN.</strong></p>
+<p>If you decide “Hook + Skill is needed”: - You MUST create the hook
+AND the skill - You MUST test that both work - You MUST NOT finish until
+both are verified</p>
+<p>If ANY component fails: - FIX IT before proceeding - DO NOT remove it
+and continue - DO NOT leave it for “later”</p>
+<p><strong>An incomplete automation is worse than no
+automation.</strong></p>
+<hr />
+<h2 id="step-0-load-schemas-and-check-for-updates">Step 0: Load schemas
+and check for updates</h2>
+<h3 id="load-validation-schemas">0.1 Load validation schemas</h3>
+<p>Read the schema files from this plugin to know what values are valid:
+- <code>plugin/schemas/hooks.json</code> - Valid hook events, types,
+matchers - <code>plugin/schemas/skills.json</code> - Skill frontmatter
+requirements - <code>plugin/schemas/subagents.json</code> - Subagent
+configuration - <code>plugin/schemas/permissions.json</code> -
+Permission patterns - <code>plugin/schemas/custom-commands.json</code> -
+Custom command format - <code>plugin/schemas/mcp-servers.json</code> -
+MCP server configuration - <code>plugin/schemas/lsp-servers.json</code>
+- LSP server configuration -
+<code>plugin/schemas/agent-teams.json</code> - Agent team
+configuration</p>
+<p><strong>CRITICAL: Only use values listed in these schemas. Never
+invent event names or fields.</strong></p>
+<h3 id="check-for-documentation-updates">0.2 Check for documentation
+updates</h3>
+<p>Fetch the official documentation to check for updates: -
+https://code.claude.com/docs/en/hooks-guide -
+https://code.claude.com/docs/en/skills -
+https://code.claude.com/docs/en/sub-agents -
+https://code.claude.com/docs/en/settings -
+https://code.claude.com/docs/en/plugins -
+https://code.claude.com/docs/en/mcp -
+https://code.claude.com/docs/en/agent-teams</p>
+<p>Compare with <code>plugin/docs/claude-code-reference.md</code>. If
+there are significant differences: 1. Show the diff to the user 2. Ask
+for confirmation before updating 3. Update schemas if new
+events/features were added</p>
+<hr />
+<h2 id="step-1-in-depth-interview">Step 1: In-depth interview</h2>
+<p>Use AskUserQuestion to clarify the use case. Ask specific
+questions:</p>
+<h3 id="timing-and-frequency">Timing and frequency</h3>
+<ul>
+<li>When should this automation happen?
+<ul>
+<li>Always, on every specific action (e.g., every commit, every
+edit)</li>
+<li>Only in certain contexts (e.g., only for TUI projects)</li>
+<li>Only on explicit user request</li>
+</ul></li>
+</ul>
+<h3 id="nature-of-automation">Nature of automation</h3>
+<ul>
+<li>Must it be guaranteed/deterministic (MUST happen) or is it a
+guideline (SHOULD happen)?</li>
+<li>Does it need Claude’s intelligence/decisions or can a script/command
+suffice?</li>
+<li>Can it fail silently or must it block the operation?</li>
+</ul>
+<h3 id="scope">Scope</h3>
+<ul>
+<li>Does it apply to all projects or just this one?</li>
+<li>Does it apply to the whole project or only certain types of
+files/work?</li>
+<li>Should other team developers follow the same rule?</li>
+</ul>
+<h3 id="inputoutput">Input/Output</h3>
+<ul>
+<li>Are parameters/arguments needed?</li>
+<li>Should it produce files, output, or modify configurations?</li>
+</ul>
+<h3 id="external-integrations-and-advanced-capabilities">External
+integrations and advanced capabilities</h3>
+<ul>
+<li>Does this involve accessing external tools or services (databases,
+APIs, GitHub, etc.)? → MCP server</li>
+<li>Do you need code intelligence like diagnostics, hover info, or
+go-to-definition? → LSP server</li>
+<li>Does this require multiple agents working in parallel on different
+aspects? → Agent Teams</li>
+</ul>
+<hr />
+<h2 id="step-2-analysis-and-decision">Step 2: Analysis and decision</h2>
+<p>Based on the answers, use this decision matrix:</p>
+<table>
+<colgroup>
+<col style="width: 9%" />
+<col style="width: 4%" />
+<col style="width: 5%" />
+<col style="width: 13%" />
+<col style="width: 8%" />
+<col style="width: 10%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+<col style="width: 9%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Criterion</th>
+<th>Hook</th>
+<th>Skill</th>
+<th>Skill (manual)</th>
+<th>Subagent</th>
+<th>Permissions</th>
+<th>CLAUDE.md</th>
+<th>Custom Cmd</th>
+<th>MCP Server</th>
+<th>LSP Server</th>
+<th>Agent Team</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Must happen ALWAYS without exceptions</td>
+<td>YES</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td>Rule about what Claude can/cannot do</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>YES</td>
+<td>maybe</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td>Domain knowledge applied automatically</td>
+<td>no</td>
+<td>YES</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>maybe</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td>Complex workflow invoked manually</td>
+<td>no</td>
+<td>no</td>
+<td>YES</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td>Needs separate/isolated context</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>YES</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td>Independent review/analysis</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>YES</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td>Simple global rule</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>YES</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td>Shortcut for frequent prompt</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>YES</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td>External tool/service integration</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>YES</td>
+<td>no</td>
+<td>no</td>
+</tr>
+<tr class="even">
+<td>Code intelligence/language analysis</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>YES</td>
+<td>no</td>
+</tr>
+<tr class="odd">
+<td>Parallel multi-agent orchestration</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>no</td>
+<td>YES</td>
+</tr>
+</tbody>
+</table>
+<h3 id="common-combinations-must-create-all-components">Common
+combinations (MUST create ALL components)</h3>
+<p><strong>Hook + Skill</strong> - When it must always happen (hook) but
+requires complex logic (skill) - REQUIRED: Hook script in
+<code>~/.claude/scripts/</code> - REQUIRED: Hook entry in
+<code>settings.json</code> with VALID event (PreToolUse, PostToolUse,
+etc.) - REQUIRED: Skill file in
+<code>~/.claude/skills/[name]/SKILL.md</code> - REQUIRED: Both
+registered with <code>relatedHook</code>/<code>relatedSkill</code>
+links</p>
+<p><strong>Skill + Subagent</strong> - When the skill defines the
+workflow but needs a subagent for deep analysis - REQUIRED: Skill file -
+REQUIRED: Subagent file in <code>~/.claude/agents/[name].md</code> -
+REQUIRED: Both registered with links</p>
+<p><strong>Permissions + CLAUDE.md</strong> - Permissions for technical
+block, CLAUDE.md to explain why - REQUIRED: Permission rule in
+<code>settings.json</code> - REQUIRED: Rule explanation in
+<code>CLAUDE.md</code> - REQUIRED: Both registered</p>
+<p><strong>MCP Server + Skill</strong> - External tool access + workflow
+orchestration - REQUIRED: MCP server config in <code>.mcp.json</code> -
+REQUIRED: Skill file with workflow using MCP tools - REQUIRED: Both
+registered with links</p>
+<p><strong>Agent Team + Skill</strong> - Multi-agent orchestration +
+domain knowledge - REQUIRED: Team config in
+<code>~/.claude/teams/{name}/config.json</code> - REQUIRED: Skill
+defining when/how to invoke the team - REQUIRED: Both registered with
+links</p>
+<hr />
+<h2 id="step-3-explain-the-decision">Step 3: Explain the decision</h2>
+<p>Before creating, explain to the user: 1. What you decided to create
+and why 2. Alternatives considered and why they were discarded 3. How it
+will work in practice 4. Any limitations or considerations</p>
+<p><strong>If the decision involves a COMBINATION (e.g., Hook + Skill),
+explicitly list ALL components:</strong></p>
+<pre><code>CREATION PLAN:
+[ ] Component 1: Hook (PreToolUse → Bash) - enforces the rule
+[ ] Component 2: Skill (semver) - provides the logic</code></pre>
+<p><strong>CRITICAL: You MUST create ALL components. Do NOT proceed to
+Step 6 until all boxes are checked.</strong></p>
+<p>Ask for confirmation before proceeding.</p>
+<hr />
+<h2 id="step-4-create-the-files-with-validation">Step 4: Create the
+files with VALIDATION</h2>
+<p><strong>CRITICAL: Before creating any file, validate against the
+schemas.</strong></p>
+<h3 id="registry-tracking">Registry tracking</h3>
+<p><strong>Every automation created MUST be registered.</strong></p>
+<p>After creating the files, add to
+<code>~/.claude/automations-registry.json</code>:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;id&quot;</span><span class="fu">:</span> <span class="st">&quot;unique-id&quot;</span><span class="fu">,</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;automation-name&quot;</span><span class="fu">,</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;type&quot;</span><span class="fu">:</span> <span class="st">&quot;skill|hook|subagent|permission|custom-command|claude-md|mcp-server|lsp-server|agent-team&quot;</span><span class="fu">,</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;scope&quot;</span><span class="fu">:</span> <span class="st">&quot;global|project&quot;</span><span class="fu">,</span></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;path&quot;</span><span class="fu">:</span> <span class="st">&quot;path/to/main/file&quot;</span><span class="fu">,</span></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;created&quot;</span><span class="fu">:</span> <span class="st">&quot;ISO-timestamp&quot;</span><span class="fu">,</span></span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;modified&quot;</span><span class="fu">:</span> <span class="st">&quot;ISO-timestamp&quot;</span><span class="fu">,</span></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;description&quot;</span><span class="fu">:</span> <span class="st">&quot;what it does&quot;</span></span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<h3 id="file-markers">File markers</h3>
+<p>Add <code>created-by: automate</code> marker to files:</p>
+<p><strong>For Skills/Subagents (markdown frontmatter):</strong></p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="pp">---</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">name</span><span class="kw">:</span><span class="at"> skill-name</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="fu">description</span><span class="kw">:</span><span class="at"> ...</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="fu">created-by</span><span class="kw">:</span><span class="at"> automate</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a><span class="pp">---</span></span></code></pre></div>
+<p><strong>For JSON configs (hooks, permissions,
+custom-commands):</strong> Add to the specific entry:</p>
+<div class="sourceCode" id="cb8"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;_meta&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;createdBy&quot;</span><span class="fu">:</span> <span class="st">&quot;automate&quot;</span><span class="fu">,</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;createdAt&quot;</span><span class="fu">:</span> <span class="st">&quot;ISO-timestamp&quot;</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p><strong>For MCP/LSP configs (JSON):</strong> Same pattern as
+hooks:</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;_meta&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;createdBy&quot;</span><span class="fu">:</span> <span class="st">&quot;automate&quot;</span><span class="fu">,</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;createdAt&quot;</span><span class="fu">:</span> <span class="st">&quot;ISO-timestamp&quot;</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p><strong>For Agent Teams (JSON):</strong> Same pattern:</p>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;_meta&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;createdBy&quot;</span><span class="fu">:</span> <span class="st">&quot;automate&quot;</span><span class="fu">,</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;createdAt&quot;</span><span class="fu">:</span> <span class="st">&quot;ISO-timestamp&quot;</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<h3 id="for-hook">For Hook</h3>
+<p><strong>ONLY use these valid events</strong> (from
+<code>schemas/hooks.json</code>): - <code>SessionStart</code> - Session
+begins (matchers: startup, resume, clear, compact) -
+<code>SessionEnd</code> - Session ends (matchers: clear, logout,
+prompt_input_exit, other, bypass_permissions_disabled) -
+<code>UserPromptSubmit</code> - When user submits a prompt (no matcher)
+- <code>PreToolUse</code> - Before a tool executes (matchers: Bash,
+Edit, Write, Edit|Write, mcp__.*) - <code>PostToolUse</code> - After a
+tool succeeds (same matchers as PreToolUse) -
+<code>PostToolUseFailure</code> - After a tool fails -
+<code>PermissionRequest</code> - When permission dialog appears -
+<code>Notification</code> - When Claude needs attention (matchers:
+permission_prompt, idle_prompt) - <code>Stop</code> - When Claude
+finishes responding (no matcher) - <code>PreCompact</code> - Before
+context compaction (matchers: manual, auto) -
+<code>SubagentStart</code>, <code>SubagentStop</code> - Subagent
+lifecycle - <code>TeammateIdle</code> - Agent team teammate about to go
+idle (matchers: agent name; exit 2 only) - <code>TaskCompleted</code> -
+Task being marked completed (no matcher; exit 2 only) -
+<code>ConfigChange</code> - Config file changed during session
+(matchers: user_settings, project_settings, local_settings,
+policy_settings, skills)</p>
+<p><strong>NEVER use these (they don’t exist):</strong> - PreCommit,
+PostCommit, PreBash, PostBash, PreEdit, PostEdit, BeforeToolUse,
+AfterToolUse</p>
+<p><strong>Correct structure:</strong></p>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;hooks&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;PreToolUse&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>      <span class="fu">{</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;matcher&quot;</span><span class="fu">:</span> <span class="st">&quot;Bash&quot;</span><span class="fu">,</span></span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>        <span class="dt">&quot;hooks&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>          <span class="fu">{</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>            <span class="dt">&quot;type&quot;</span><span class="fu">:</span> <span class="st">&quot;command&quot;</span><span class="fu">,</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>            <span class="dt">&quot;command&quot;</span><span class="fu">:</span> <span class="st">&quot;your-command-here&quot;</span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>          <span class="fu">}</span></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>        <span class="ot">]</span></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>      <span class="fu">}</span></span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a>    <span class="ot">]</span></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<h4 id="required-settings.json-merge-algorithm">REQUIRED: settings.json
+merge algorithm</h4>
+<p>NEVER overwrite settings.json. Always merge.</p>
+<p><strong>Adding a hook:</strong> 1. Read entire
+<code>~/.claude/settings.json</code> (use <code>{}</code> if it doesn’t
+exist) 2. Append new matcher object to
+<code>.hooks["EventName"][]</code> - If <code>.hooks</code> doesn’t
+exist → set to <code>{}</code> - If <code>.hooks["EventName"]</code>
+doesn’t exist → set to <code>[]</code> - Append, never replace 3. Write
+complete merged JSON back 4. Read back and confirm the entry is
+present</p>
+<p><strong>Removing a hook:</strong> 1. Read entire settings.json 2.
+Remove ONLY the specific array element whose inner
+<code>hooks[].command</code> matches (or match via
+<code>_meta.createdBy: "automate"</code> + automation name) 3. If the
+event array becomes empty → remove the event key 4. Write back</p>
+<p><strong>Never write a partial <code>hooks</code> object — always
+include all existing events.</strong></p>
+<p><strong>Hook handler fields:</strong> - <code>type</code> (string,
+required): <code>command</code>, <code>prompt</code>, or
+<code>agent</code> - <code>command</code> (string): Shell command to run
+(command type) - <code>prompt</code> (string): Prompt text (prompt/agent
+type) - <code>async</code> (boolean): Run hook in background without
+blocking Claude (command type only) - <code>timeout</code> (integer):
+Timeout in ms. Defaults: command=600000, prompt=30000, agent=60000 -
+<code>statusMessage</code> (string): Custom spinner message while hook
+runs - <code>model</code> (string): Model for prompt/agent hooks
+(default: haiku)</p>
+<p><strong>Exit codes:</strong> - Exit 0 = allow the action - Exit 2 =
+block the action (stderr becomes Claude’s feedback)</p>
+<p><strong>Input modification (PreToolUse only):</strong> PreToolUse
+hooks can modify tool inputs via
+<code>hookSpecificOutput.updatedInput</code>. When a hook returns JSON
+with an <code>updatedInput</code> field, Claude will use the modified
+input instead of the original.</p>
+<p><strong>Hook input (stdin):</strong> Hook commands receive a JSON
+object via <strong>stdin</strong> with the full context. Read it with
+<code>cat</code> or <code>jq</code>: -
+<code>cat | jq -r '.tool_name'</code> - Name of the tool -
+<code>cat | jq -r '.tool_input.file_path'</code> - Tool input fields -
+<code>cat | jq -r '.tool_input.command'</code> - Bash command (for Bash
+tool)</p>
+<p><strong>Note:</strong> <code>TOOL_INPUT</code> and
+<code>CLAUDE_TOOL_INPUT</code> env vars are NOT set. Always read from
+stdin.</p>
+<p><strong>Environment variables available to hooks (no tool
+input):</strong> - <code>CLAUDE_PROJECT_DIR</code> - Project directory
+path - <code>CLAUDE_SESSION_ID</code> - Current session identifier -
+<code>CLAUDE_ENV_FILE</code> - File path for persisting environment
+variables (SessionStart hooks) - <code>CLAUDE_PLUGIN_ROOT</code> - Root
+directory of the plugin - <code>CLAUDE_CODE_REMOTE</code> - Set to
+‘true’ in remote/web environments</p>
+<p><strong>Use templates from <code>plugin/templates/hook-*.json</code>
+as a base.</strong></p>
+<h3 id="for-skill">For Skill</h3>
+<p>Location: <code>.claude/skills/[name]/SKILL.md</code> (project) or
+<code>~/.claude/skills/[name]/SKILL.md</code> (global)</p>
+<p>Required frontmatter:</p>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="pp">---</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">name</span><span class="kw">:</span><span class="at"> skill-name</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="fu">description</span><span class="kw">:</span><span class="at"> What this skill does</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="fu">disable-model-invocation</span><span class="kw">:</span><span class="at"> true|false</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a><span class="fu">created-by</span><span class="kw">:</span><span class="at"> automate</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a><span class="pp">---</span></span></code></pre></div>
+<p>Use template from <code>plugin/templates/skill.md</code>.</p>
+<h3 id="for-subagent">For Subagent</h3>
+<p>Location: <code>.claude/agents/[name].md</code> (project) or
+<code>~/.claude/agents/[name].md</code> (global)</p>
+<p>Required frontmatter:</p>
+<div class="sourceCode" id="cb13"><pre
+class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="pp">---</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">name</span><span class="kw">:</span><span class="at"> agent-name</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="fu">description</span><span class="kw">:</span><span class="at"> What this agent does</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="fu">tools</span><span class="kw">:</span><span class="at"> Read, Grep, Glob, Bash</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="fu">model</span><span class="kw">:</span><span class="at"> inherit</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="fu">created-by</span><span class="kw">:</span><span class="at"> automate</span></span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a><span class="pp">---</span></span></code></pre></div>
+<p>Valid tools: Read, Grep, Glob, Bash, Edit, Write, WebFetch,
+WebSearch, Task, NotebookEdit, AskUserQuestion, TaskOutput,
+ExitPlanMode, MCPSearch MCP tools can also be used as
+<code>mcp__&lt;server&gt;__&lt;tool&gt;</code></p>
+<p>Valid models: opus, sonnet, haiku, inherit</p>
+<p>Optional frontmatter fields: - <code>disallowedTools</code> - Tools
+the subagent cannot use - <code>permissionMode</code> - Permission
+handling mode - <code>skills</code> - Skills available to the subagent -
+<code>hooks</code> - Hooks specific to the subagent -
+<code>memory</code> - Memory/context configuration</p>
+<p>Use template from <code>plugin/templates/subagent.md</code>.</p>
+<h3 id="for-permissions">For Permissions</h3>
+<p>Location: <code>.claude/settings.json</code></p>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;permissions&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;allow&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;Bash(git commit *)&quot;</span><span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;deny&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;Bash(git push *)&quot;</span><span class="ot">]</span></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p><strong>Warning:</strong> Does NOT work with
+<code>--dangerously-skip-permissions</code>. Use Hooks instead for
+guaranteed blocks.</p>
+<h3 id="for-custom-command">For Custom Command</h3>
+<p>Location: <code>.claude/settings.json</code></p>
+<div class="sourceCode" id="cb15"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;customCommands&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;prompt text&quot;</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<h3 id="for-claude.md">For CLAUDE.md</h3>
+<p>Add the rule to <code>./CLAUDE.md</code> (project) or
+<code>~/.claude/CLAUDE.md</code> (global).</p>
+<h3 id="for-mcp-server">For MCP Server</h3>
+<p>Location: <code>.mcp.json</code> (project) or
+<code>~/.claude.json</code> (global, under <code>mcpServers</code>
+key)</p>
+<p>Structure:</p>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;mcpServers&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;server-name&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;type&quot;</span><span class="fu">:</span> <span class="st">&quot;stdio&quot;</span><span class="fu">,</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;command&quot;</span><span class="fu">:</span> <span class="st">&quot;path/to/server&quot;</span><span class="fu">,</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;args&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;--flag&quot;</span><span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;env&quot;</span><span class="fu">:</span> <span class="fu">{</span><span class="dt">&quot;KEY&quot;</span><span class="fu">:</span> <span class="st">&quot;value&quot;</span><span class="fu">}</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>Valid types: stdio, sse - stdio: requires <code>command</code> field
+- sse: requires <code>url</code> field - Tools appear as
+<code>mcp__&lt;server&gt;__&lt;tool&gt;</code> in Claude - Can be used
+in hook matchers: <code>"matcher": "mcp__servername__.*"</code></p>
+<p>Use template from <code>plugin/templates/mcp-server.json</code>.</p>
+<h3 id="for-lsp-server">For LSP Server</h3>
+<p>Location: <code>.lsp.json</code> (project) or
+<code>~/.claude/lsp.json</code> (global)</p>
+<p>Structure:</p>
+<div class="sourceCode" id="cb17"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;server-name&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;command&quot;</span><span class="fu">:</span> <span class="st">&quot;path/to/lsp-server&quot;</span><span class="fu">,</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;args&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;--stdio&quot;</span><span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;languages&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;typescript&quot;</span><span class="ot">,</span> <span class="st">&quot;javascript&quot;</span><span class="ot">]</span></span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p>Required: command, languages array Optional: args,
+initializationOptions</p>
+<p>Use template from <code>plugin/templates/lsp-server.json</code>.</p>
+<h3 id="for-agent-team">For Agent Team</h3>
+<p>Location: <code>~/.claude/teams/{team-name}/config.json</code></p>
+<p>Structure:</p>
+<div class="sourceCode" id="cb18"><pre
+class="sourceCode json"><code class="sourceCode json"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">{</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;team-name&quot;</span><span class="fu">,</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;description&quot;</span><span class="fu">:</span> <span class="st">&quot;What the team does&quot;</span><span class="fu">,</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;agents&quot;</span><span class="fu">:</span> <span class="ot">[</span></span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    <span class="fu">{</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;name&quot;</span><span class="fu">:</span> <span class="st">&quot;agent-name&quot;</span><span class="fu">,</span></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;role&quot;</span><span class="fu">:</span> <span class="st">&quot;What this agent does&quot;</span><span class="fu">,</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;tools&quot;</span><span class="fu">:</span> <span class="ot">[</span><span class="st">&quot;Read&quot;</span><span class="ot">,</span> <span class="st">&quot;Grep&quot;</span><span class="ot">,</span> <span class="st">&quot;Glob&quot;</span><span class="ot">,</span> <span class="st">&quot;Bash&quot;</span><span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>      <span class="dt">&quot;model&quot;</span><span class="fu">:</span> <span class="st">&quot;inherit&quot;</span></span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>    <span class="fu">}</span></span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>  <span class="ot">]</span><span class="fu">,</span></span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>  <span class="dt">&quot;settings&quot;</span><span class="fu">:</span> <span class="fu">{</span></span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;displayMode&quot;</span><span class="fu">:</span> <span class="st">&quot;in-process&quot;</span><span class="fu">,</span></span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;delegateMode&quot;</span><span class="fu">:</span> <span class="kw">false</span><span class="fu">,</span></span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>    <span class="dt">&quot;requirePlanApproval&quot;</span><span class="fu">:</span> <span class="kw">false</span></span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">}</span></span>
+<span id="cb18-17"><a href="#cb18-17" aria-hidden="true" tabindex="-1"></a><span class="fu">}</span></span></code></pre></div>
+<p><strong>Warning</strong>: Requires
+<code>CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1</code> environment
+variable. Agent Teams are experimental and may change.</p>
+<p>Valid displayMode: in-process, split-panes Valid models: opus,
+sonnet, haiku, inherit</p>
+<p>Use template from <code>plugin/templates/agent-team.json</code>.</p>
+<hr />
+<h2 id="step-5-validate-before-writing">Step 5: Validate before
+writing</h2>
+<p>Before creating any configuration file:</p>
+<ol type="1">
+<li><strong>For hooks</strong>: Verify event name is in the valid
+list</li>
+<li><strong>For hooks</strong>: Verify structure has nested
+<code>hooks</code> array with <code>type</code> and
+<code>command</code></li>
+<li><strong>For skills/subagents</strong>: Verify required frontmatter
+fields</li>
+<li><strong>For subagents</strong>: Verify tools and model are
+valid</li>
+<li><strong>For MCP servers</strong>: Verify valid JSON,
+<code>mcpServers</code> key exists, each server has <code>type</code>
+and either <code>command</code> (stdio) or <code>url</code> (sse)</li>
+<li><strong>For LSP servers</strong>: Verify valid JSON, each server has
+<code>command</code> and <code>languages</code> array</li>
+<li><strong>For Agent Teams</strong>: Verify valid JSON,
+<code>name</code>/<code>description</code>/<code>agents</code> exist,
+each agent has <code>name</code> and <code>role</code></li>
+</ol>
+<p>If validation fails, show the error and do NOT create the file.</p>
+<hr />
+<h2 id="step-6-verify-completeness">Step 6: Verify COMPLETENESS</h2>
+<p><strong>BEFORE showing results to user, verify ALL planned components
+were created:</strong></p>
+<ol type="1">
+<li>Check your CREATION PLAN from Step 3</li>
+<li>For each component:
+<ul class="task-list">
+<li><label><input type="checkbox" />File exists at the specified
+path</label></li>
+<li><label><input type="checkbox" />Content is valid (matches
+schema)</label></li>
+<li><label><input type="checkbox" />Registered in
+automations-registry.json</label></li>
+</ul></li>
+</ol>
+<p><strong>If ANY component is missing or invalid:</strong> - DO NOT
+proceed to Step 7 - GO BACK and create/fix the missing component - This
+is NON-NEGOTIABLE</p>
+<h3 id="verification-checklist-for-combinations">Verification checklist
+for combinations:</h3>
+<p><strong>Hook + Skill:</strong> - [ ] Skill file exists and has valid
+frontmatter - [ ] Hook script exists and is executable - [ ] Hook is
+registered in settings.json with VALID event (PreToolUse, NOT PreCommit)
+- [ ] Both are in automations-registry.json with
+<code>relatedHook</code>/<code>relatedSkill</code> links</p>
+<p><strong>Skill + Subagent:</strong> - [ ] Skill file exists - [ ]
+Subagent file exists with valid tools/model - [ ] Both registered with
+links</p>
+<p><strong>Permissions + CLAUDE.md:</strong> - [ ] Permission rule in
+settings.json - [ ] Explanation in CLAUDE.md - [ ] Both registered</p>
+<p><strong>MCP Server + Skill:</strong> - [ ] MCP config in .mcp.json
+with valid server entry - [ ] Skill file exists with valid frontmatter -
+[ ] Both registered with links</p>
+<p><strong>Agent Team + Skill:</strong> - [ ] Team config exists with
+valid agents - [ ] Skill file exists - [ ] Both registered with
+links</p>
+<hr />
+<h2 id="step-7-test-the-automation">Step 7: Test the automation</h2>
+<p><strong>MANDATORY: Test that the automation actually works before
+finishing.</strong></p>
+<h3 id="for-hooks">For Hooks:</h3>
+<div class="sourceCode" id="cb19"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Test the hook script directly</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="ex">~/.claude/scripts/your-hook.sh</span> <span class="st">&quot;test command&quot;</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="va">$?</span>  <span class="co"># Should be 0 (allow) or 2 (block)</span></span></code></pre></div>
+<p>If the test fails: 1. Fix the script 2. Re-test 3. DO NOT finish
+until the test passes</p>
+<h3 id="for-skills">For Skills:</h3>
+<ul>
+<li>Verify the skill appears in <code>/skills</code> list</li>
+<li>If <code>disable-model-invocation: false</code>, verify Claude
+recognizes when to use it</li>
+</ul>
+<h3 id="for-permissions-1">For Permissions:</h3>
+<ul>
+<li>Verify the rule appears in settings</li>
+<li>Test with a matching command</li>
+</ul>
+<hr />
+<h2 id="step-8-final-report">Step 8: Final report</h2>
+<p>Only after ALL verifications pass:</p>
+<ol type="1">
+<li><p>Show the CREATION PLAN with all boxes checked:</p>
+<pre><code>CREATION COMPLETE:
+[x] Component 1: Hook - ~/.claude/scripts/check-semver.sh
+[x] Component 2: Skill - ~/.claude/skills/semver/SKILL.md</code></pre></li>
+<li><p>Show test results:</p>
+<pre><code>TESTS PASSED:
+[x] Hook blocks when VERSION not staged (exit 2)
+[x] Hook allows when VERSION is staged (exit 0)
+[x] Skill registered and visible</code></pre></li>
+<li><p>Explain how to use the automation</p></li>
+<li><p>Confirm all components are in the registry</p></li>
+</ol>
+<p><strong>If you cannot complete all steps, explicitly tell the user
+what failed and why.</strong></p>
+<hr />
+<h2 id="important-notes">Important notes</h2>
+<h3 id="never-do-these-things">NEVER do these things:</h3>
+<ul>
+<li>Create a hook with invalid event (PreCommit, PostCommit, PreBash,
+etc.)</li>
+<li>Promise “Hook + Skill” but only create the skill</li>
+<li>Remove a broken component instead of fixing it</li>
+<li>Skip testing and verification</li>
+<li>Finish with unchecked items in the CREATION PLAN</li>
+<li>Create Agent Team config without warning about experimental
+status</li>
+</ul>
+<h3 id="always-do-these-things">ALWAYS do these things:</h3>
+<ul>
+<li>Validate against schemas BEFORE creating</li>
+<li>Create ALL components of a combination</li>
+<li>Test each component works</li>
+<li>Register everything in automations-registry.json</li>
+<li>Link related components (relatedHook/relatedSkill)</li>
+</ul>
+<h3 id="technical-notes">Technical notes:</h3>
+<ul>
+<li>If the user uses <code>--dangerously-skip-permissions</code>,
+Permissions won’t work. Suggest Hook as an alternative for blocks.</li>
+<li>CLAUDE.md instructions are advisory, not guaranteed. If certainty is
+needed, use Hook.</li>
+<li>Hooks are scripts, they don’t have access to Claude’s intelligence.
+For complex logic, combine Hook + Skill.</li>
+<li>Subagents consume extra tokens but preserve the main context.</li>
+<li>Valid hook events: SessionStart, SessionEnd, UserPromptSubmit,
+PreToolUse, PostToolUse, PostToolUseFailure, PermissionRequest,
+Notification, Stop, PreCompact, SubagentStart, SubagentStop,
+TeammateIdle, TaskCompleted, ConfigChange</li>
+<li>All automations are tracked in
+<code>~/.claude/automations-registry.json</code> for management with
+list/edit/delete/export/import.</li>
+<li>Agent Teams require
+<code>CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1</code> and are
+experimental. The feature may change or be removed.</li>
+<li>MCP tools appear as <code>mcp__&lt;server&gt;__&lt;tool&gt;</code>
+in Claude and can be matched in hooks using
+<code>"matcher": "mcp__servername__.*"</code>.</li>
+<li>LSP servers must be installed separately; the config only points to
+them. Claude Code does not install language servers.</li>
+<li>Background subagents cannot use MCP tools.</li>
+</ul>
+</body>
+</html>

@@ -34,7 +34,7 @@ This document describes all test scenarios for the `automate` skill.
       "matcher": "Bash",
       "hooks": [{
         "type": "command",
-        "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -q 'git push'; then echo 'Push blocked' >&2; exit 2; fi"
+        "command": "if cat | jq -r '.tool_input.command' | grep -q 'git push'; then echo 'Push blocked' >&2; exit 2; fi"
       }]
     }]
   }

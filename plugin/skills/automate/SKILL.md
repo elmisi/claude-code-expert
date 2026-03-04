@@ -484,10 +484,17 @@ NEVER overwrite settings.json. Always merge.
 **Input modification (PreToolUse only):**
 PreToolUse hooks can modify tool inputs via `hookSpecificOutput.updatedInput`. When a hook returns JSON with an `updatedInput` field, Claude will use the modified input instead of the original.
 
-**Environment variables available to hooks:**
-- `TOOL_NAME` - Name of the tool being invoked
-- `TOOL_INPUT` - JSON-encoded tool input
-- `SESSION_ID` - Current session identifier
+**Hook input (stdin):**
+Hook commands receive a JSON object via **stdin** with the full context. Read it with `cat` or `jq`:
+- `cat | jq -r '.tool_name'` - Name of the tool
+- `cat | jq -r '.tool_input.file_path'` - Tool input fields
+- `cat | jq -r '.tool_input.command'` - Bash command (for Bash tool)
+
+**Note:** `TOOL_INPUT` and `CLAUDE_TOOL_INPUT` env vars are NOT set. Always read from stdin.
+
+**Environment variables available to hooks (no tool input):**
+- `CLAUDE_PROJECT_DIR` - Project directory path
+- `CLAUDE_SESSION_ID` - Current session identifier
 - `CLAUDE_ENV_FILE` - File path for persisting environment variables (SessionStart hooks)
 - `CLAUDE_PLUGIN_ROOT` - Root directory of the plugin
 - `CLAUDE_CODE_REMOTE` - Set to 'true' in remote/web environments

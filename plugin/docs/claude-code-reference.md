@@ -102,16 +102,49 @@ These event names do **NOT** exist:
 - **PreToolUse `updatedInput`**: Hooks on `PreToolUse` can return a JSON object with an `updatedInput` key on stdout. This allows hooks to modify the tool's input before execution (e.g., rewriting file paths, adding flags).
 - **PermissionRequest `decision`**: Hooks on `PermissionRequest` can return a JSON object with a `decision` key (`"allow"` or `"deny"`) on stdout. This allows hooks to programmatically control permission decisions without user interaction.
 
+### Hook Input (stdin)
+
+Hook commands receive a **JSON object via stdin** containing the full hook context. This is the primary way to access tool input — there is no `TOOL_INPUT` or `CLAUDE_TOOL_INPUT` environment variable.
+
+**stdin JSON structure (for PreToolUse/PostToolUse):**
+
+```json
+{
+  "session_id": "...",
+  "cwd": "/path/to/project",
+  "hook_event_name": "PostToolUse",
+  "tool_name": "Edit",
+  "tool_input": {
+    "file_path": "/path/to/file.txt",
+    "old_string": "...",
+    "new_string": "..."
+  },
+  "tool_response": { "..." }
+}
+```
+
+**Reading input in hook scripts:**
+
+```bash
+# Read a specific field with jq
+FILE=$(cat | jq -r '.tool_input.file_path')
+
+# Or capture all stdin first, then extract
+INPUT=$(cat)
+TOOL=$(echo "$INPUT" | jq -r '.tool_name')
+```
+
 ### Environment Variables
 
 | Variable | Description |
 |----------|-------------|
-| `CLAUDE_TOOL_INPUT` | JSON string of tool input |
 | `CLAUDE_PROJECT_DIR` | Project directory path |
 | `CLAUDE_SESSION_ID` | Current session ID |
 | `CLAUDE_ENV_FILE` | Path to a file where hooks can write `KEY=VALUE` pairs to set environment variables for subsequent hooks |
 | `CLAUDE_PLUGIN_ROOT` | Root directory of the plugin that registered the hook |
 | `CLAUDE_CODE_REMOTE` | Set to `1` when running in a remote/headless environment |
+
+**Note:** Tool input is NOT available as an environment variable. Always read it from stdin.
 
 ### Example: Block git push
 
@@ -124,7 +157,7 @@ These event names do **NOT** exist:
         "hooks": [
           {
             "type": "command",
-            "command": "if echo \"$CLAUDE_TOOL_INPUT\" | grep -q 'git push'; then echo 'Blocked: requires authorization' >&2; exit 2; fi"
+            "command": "if cat | jq -r '.tool_input.command' | grep -q 'git push'; then echo 'Blocked: requires authorization' >&2; exit 2; fi"
           }
         ]
       }

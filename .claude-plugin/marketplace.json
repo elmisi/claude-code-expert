@@ -10,7 +10,7 @@
   "plugins": [
     {
       "name": "automate",
-      "version": "2.1.0",
+      "version": "2.1.1",
       "source": "./plugin",
       "description": "Expert advisor that helps you decide and create the right Claude Code automation (skills, hooks, subagents, permissions, etc.)"
     }
