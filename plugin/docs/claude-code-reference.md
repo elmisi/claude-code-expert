@@ -1,6 +1,6 @@
 # Claude Code Reference Documentation
 
-Last updated: 2026-02-06
+Last updated: 2026-03-14
 
 This file contains the reference documentation for Claude Code automation mechanisms.
 For the authoritative source of valid values, see the schema files in `plugin/schemas/`.
@@ -58,11 +58,17 @@ Location: `.claude/settings.json` or `~/.claude/settings.json`
 | `PostToolUse` | After tool succeeds | Same as PreToolUse |
 | `PostToolUseFailure` | After tool fails | Same as PreToolUse |
 | `PermissionRequest` | Permission dialog appears | Tool names |
-| `Notification` | Claude needs attention | `permission_prompt`, `idle_prompt`, `auth_success` |
+| `Notification` | Claude needs attention | `permission_prompt`, `idle_prompt`, `auth_success`, `elicitation_dialog` |
 | `Stop` | Claude finishes responding | (no matcher) |
 | `PreCompact` | Before context compaction | `manual`, `auto` |
 | `SubagentStart` | Subagent spawned | Agent type (e.g. `code-reviewer`, `general-purpose`) |
 | `SubagentStop` | Subagent finished | Agent type (e.g. `code-reviewer`, `general-purpose`) |
+| `PostCompact` | After context compaction completes | `manual`, `auto` |
+| `InstructionsLoaded` | When CLAUDE.md or rules files loaded | (no matcher, exit code ignored) |
+| `WorktreeCreate` | When a worktree is being created | (no matcher, any non-zero fails) |
+| `WorktreeRemove` | When a worktree is being removed | (no matcher) |
+| `Elicitation` | When MCP server requests user input | MCP server name (regex) |
+| `ElicitationResult` | After user responds to MCP elicitation | MCP server name (regex) |
 
 ### Invalid Events (DO NOT USE)
 
@@ -79,15 +85,20 @@ These event names do **NOT** exist:
 | `command` | Execute a shell command |
 | `prompt` | Single-turn LLM evaluation (Haiku by default) |
 | `agent` | Multi-turn verification with tool access |
+| `http` | Send POST to URL endpoint |
 
 ### Hook Handler Fields
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `async` | boolean | Run in background, `command` type only |
-| `timeout` | integer | Per-hook timeout in milliseconds |
+| `timeout` | integer | Per-hook timeout in seconds (defaults: 600 for command, 30 for prompt, 60 for agent) |
 | `statusMessage` | string | Custom spinner text shown during execution |
 | `model` | string | Model override for `prompt` and `agent` hook types |
+| `url` | string | URL for POST request (`http` type only) |
+| `headers` | object | HTTP headers with env var interpolation (`http` type only) |
+| `allowedEnvVars` | array | Env var names allowed in headers (`http` type only) |
+| `once` | boolean | If true, runs only once per session then removed |
 
 ### Exit Codes
 
@@ -195,12 +206,21 @@ Content here...
 | `disable-model-invocation` | No | If `true`, only invoked via `/skill-name`. Default: `false` |
 | `context` | No | Set to `fork` to run the skill in a forked conversation context |
 | `hooks` | No | Object defining hooks scoped to this skill (same structure as global hooks) |
+| `argument-hint` | No | Hint for autocomplete (e.g. `[issue-number]`) |
+| `user-invocable` | No | `false` to hide from `/` menu (only Claude invokes) |
+| `allowed-tools` | No | Tools allowed without permission when skill is active |
+| `model` | No | Model to use when skill is active |
+| `agent` | No | Subagent type for `context: fork` (e.g. `Explore`, `Plan`) |
 
 ### Variables
 
 | Variable | Description |
 |----------|-------------|
 | `$ARGUMENTS` | Replaced with user input after `/skill-name` |
+| `$ARGUMENTS[N]` | Access argument by 0-based index |
+| `$N` | Shorthand for `$ARGUMENTS[N]` |
+| `${CLAUDE_SESSION_ID}` | Current session ID |
+| `${CLAUDE_SKILL_DIR}` | Directory containing SKILL.md |
 
 **Note**: Skills support hot-reloading. Changes to SKILL.md files are picked up automatically without restarting Claude Code.
 
@@ -231,13 +251,17 @@ System prompt for the agent...
 |-------|----------|--------------|
 | `name` | Yes | Agent identifier |
 | `description` | Yes | Brief description |
-| `tools` | No | `Read`, `Grep`, `Glob`, `Bash`, `Edit`, `Write`, `WebFetch`, `WebSearch`, `Task`, `NotebookEdit`, `AskUserQuestion`, `TaskOutput`, `ExitPlanMode`, `MCPSearch` |
+| `tools` | No | `Agent`, `AskUserQuestion`, `Bash`, `CronCreate`, `CronDelete`, `CronList`, `Edit`, `EnterPlanMode`, `EnterWorktree`, `ExitPlanMode`, `ExitWorktree`, `Glob`, `Grep`, `ListMcpResourcesTool`, `LSP`, `NotebookEdit`, `Read`, `ReadMcpResourceTool`, `Skill`, `TaskCreate`, `TaskGet`, `TaskList`, `TaskOutput`, `TaskStop`, `TaskUpdate`, `TodoWrite`, `ToolSearch`, `WebFetch`, `WebSearch`, `Write` |
 | `model` | No | `opus`, `sonnet`, `haiku`, `inherit` (default: inherit) |
 | `disallowedTools` | No | List of tools the agent cannot use |
 | `permissionMode` | No | Permission mode for the agent's tool usage |
 | `skills` | No | List of skills available to the agent |
 | `hooks` | No | Object defining hooks scoped to this agent |
 | `memory` | No | Persistent memory configuration for the agent |
+| `maxTurns` | No | Maximum number of agentic turns |
+| `mcpServers` | No | MCP servers scoped to this subagent |
+| `background` | No | Always run as background task (`true`/`false`) |
+| `isolation` | No | `worktree` for isolated git worktree |
 
 ### Built-in Agents
 
@@ -249,6 +273,8 @@ Claude Code includes several built-in agents:
 | `Plan` | Planning and task decomposition |
 | `general-purpose` | General-purpose subagent for delegated tasks |
 | `Bash` | Shell command execution agent |
+| `statusline-setup` | Configure status line settings |
+| `Claude Code Guide` | Answer questions about Claude Code features |
 
 **Use for**:
 - Tasks requiring separate/clean context
@@ -353,7 +379,8 @@ Location: `.mcp.json` (project) or `~/.claude.json` (global)
 | Type | Required Fields | Description |
 |------|----------------|-------------|
 | `stdio` | `command` | Communicates via stdin/stdout. Requires `command`, optional `args` and `env` |
-| `sse` | `url` | Communicates via Server-Sent Events. Requires `url` |
+| `sse` | `url` | Communicates via Server-Sent Events. Requires `url` (deprecated, use `http` instead) |
+| `http` | `url` | Communicates via streamable HTTP (recommended). Requires `url`, optional `headers` and `oauth` |
 
 ### Tool Naming
 
@@ -402,6 +429,8 @@ Location: `.lsp.json` (project) or `~/.claude/lsp.json` (global)
 
 Location: `~/.claude/teams/{team-name}/config.json`
 
+Teams are orchestrated via natural language, not declarative JSON config. You define the team structure and agents, then describe delegation and coordination in natural language instructions.
+
 ### Structure
 
 ```json
@@ -421,12 +450,7 @@ Location: `~/.claude/teams/{team-name}/config.json`
       "tools": ["Read", "Edit", "Write", "Bash"],
       "model": "sonnet"
     }
-  ],
-  "settings": {
-    "displayMode": "split",
-    "delegateMode": "auto",
-    "requirePlanApproval": true
-  }
+  ]
 }
 ```
 
@@ -440,11 +464,13 @@ Location: `~/.claude/teams/{team-name}/config.json`
 
 ### Settings
 
+The `teammateMode` setting in `settings.json` controls how teammates run:
+
 | Setting | Description |
 |---------|-------------|
-| `displayMode` | How agent outputs are displayed (`split`, `sequential`, `unified`) |
-| `delegateMode` | How tasks are delegated to agents (`auto`, `manual`) |
-| `requirePlanApproval` | Whether the orchestrator must get approval before delegating |
+| `teammateMode` | How teammates are executed: `in-process`, `tmux`, or `auto` |
+
+Delegation strategy and plan approval are controlled via natural language instructions to the orchestrator, not via JSON settings.
 
 **Use for**: Parallel multi-agent orchestration where multiple Claude instances work on different parts of a task simultaneously
 

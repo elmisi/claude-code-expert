@@ -11,19 +11,26 @@
     "required": {
       "name": {
         "type": "string",
-        "description": "Agent identifier"
+        "description": "Agent identifier (lowercase letters, numbers, hyphens)"
       },
       "description": {
         "type": "string",
-        "description": "Brief description of what the agent does"
+        "description": "Brief description of what the agent does. Claude uses this to decide when to delegate."
       }
     },
     "optional": {
       "tools": {
         "type": "string",
         "description": "Comma-separated list of allowed tools. By default, subagents inherit all tools from the main conversation including MCP tools.",
-        "validValues": ["Read", "Grep", "Glob", "Bash", "Edit", "Write", "WebFetch", "WebSearch", "Task", "NotebookEdit", "AskUserQuestion", "TaskOutput", "ExitPlanMode", "MCPSearch"],
-        "note": "MCP tools can also be included as mcp__<server>__<tool>",
+        "validValues": [
+          "Agent", "AskUserQuestion", "Bash", "CronCreate", "CronDelete", "CronList",
+          "Edit", "EnterPlanMode", "EnterWorktree", "ExitPlanMode", "ExitWorktree",
+          "Glob", "Grep", "ListMcpResourcesTool", "LSP", "NotebookEdit", "Read",
+          "ReadMcpResourceTool", "Skill", "TaskCreate", "TaskGet", "TaskList",
+          "TaskOutput", "TaskStop", "TaskUpdate", "TodoWrite", "ToolSearch",
+          "WebFetch", "WebSearch", "Write"
+        ],
+        "note": "MCP tools can also be included as mcp__<server>__<tool>. Use Agent(type1, type2) to restrict which subagent types can be spawned.",
         "example": "Read, Grep, Glob, Bash"
       },
       "disallowedTools": {
@@ -35,25 +42,49 @@
         "type": "string",
         "validValues": ["opus", "sonnet", "haiku", "inherit"],
         "default": "inherit",
-        "description": "Which Claude model to use. 'inherit' uses the same model as the main conversation."
+        "description": "Which Claude model to use. Also accepts full model IDs (e.g. claude-opus-4-6). 'inherit' uses the same model as the main conversation."
       },
       "permissionMode": {
         "type": "string",
         "validValues": ["default", "acceptEdits", "dontAsk", "bypassPermissions", "plan"],
         "description": "Permission mode for the subagent"
       },
+      "maxTurns": {
+        "type": "number",
+        "description": "Maximum number of agentic turns before the subagent stops"
+      },
       "skills": {
         "type": "string",
-        "description": "Comma-separated list of skill names to preload into the subagent's context"
+        "description": "Comma-separated list of skill names to preload into the subagent's context at startup. Full skill content is injected, not just made available. Subagents don't inherit skills from parent."
+      },
+      "mcpServers": {
+        "type": "array",
+        "description": "MCP servers available to this subagent. Each entry is either a string (referencing an already-configured server) or an inline definition with server name as key and full MCP server config as value.",
+        "example": ["- playwright:\n    type: stdio\n    command: npx\n    args: [\"-y\", \"@playwright/mcp@latest\"]", "- github"]
       },
       "hooks": {
         "type": "object",
-        "description": "Lifecycle hooks scoped to this subagent (same format as global hooks)"
+        "description": "Lifecycle hooks scoped to this subagent (same format as global hooks). Stop hooks in frontmatter are converted to SubagentStop events."
       },
       "memory": {
         "type": "string",
         "validValues": ["user", "project", "local"],
-        "description": "Persistent memory scope. Gives the subagent a persistent directory that survives across conversations."
+        "description": "Persistent memory scope. Gives the subagent a persistent directory that survives across conversations.",
+        "locations": {
+          "user": "~/.claude/agent-memory/<name>/",
+          "project": ".claude/agent-memory/<name>/",
+          "local": ".claude/agent-memory-local/<name>/"
+        }
+      },
+      "background": {
+        "type": "boolean",
+        "default": false,
+        "description": "Set to true to always run this subagent as a background task. Background subagents auto-deny unapproved permissions."
+      },
+      "isolation": {
+        "type": "string",
+        "validValues": ["worktree"],
+        "description": "Set to 'worktree' to run the subagent in a temporary git worktree, giving it an isolated copy of the repository. Automatically cleaned up if no changes."
       }
     }
   },
@@ -62,23 +93,33 @@
     "agents": {
       "Explore": {
         "model": "haiku",
-        "tools": "Read, Grep, Glob (read-only)",
-        "purpose": "Fast codebase exploration"
+        "tools": "Read-only tools (denied access to Write and Edit)",
+        "purpose": "Fast codebase exploration and search"
       },
       "Plan": {
         "model": "inherit",
-        "tools": "Read, Grep, Glob (read-only)",
-        "purpose": "Design implementation plans"
+        "tools": "Read-only tools (denied access to Write and Edit)",
+        "purpose": "Codebase research for planning"
       },
       "general-purpose": {
         "model": "inherit",
         "tools": "all",
-        "purpose": "Complex multi-step tasks"
+        "purpose": "Complex multi-step tasks requiring exploration and action"
       },
       "Bash": {
         "model": "inherit",
         "tools": "Bash",
-        "purpose": "Command execution"
+        "purpose": "Command execution in separate context"
+      },
+      "statusline-setup": {
+        "model": "sonnet",
+        "tools": "Read, Edit",
+        "purpose": "Configure status line settings"
+      },
+      "Claude Code Guide": {
+        "model": "haiku",
+        "tools": "Glob, Grep, Read, WebFetch, WebSearch",
+        "purpose": "Answer questions about Claude Code features"
       }
     }
   },
@@ -98,6 +139,9 @@
     "backgroundExecution": "Subagents can run concurrently in the background. Pre-approved permissions required.",
     "resumption": "Subagents can be resumed with full conversation history using agent IDs.",
     "mcpTools": "Background subagents cannot use MCP tools.",
-    "autoCompaction": "Subagents support automatic compaction like the main conversation."
+    "autoCompaction": "Subagents support automatic compaction like the main conversation.",
+    "noNesting": "Subagents cannot spawn other subagents. Use Skills or chain from main conversation.",
+    "taskRenamed": "In v2.1.63, the Task tool was renamed to Agent. Existing Task(...) references still work as aliases.",
+    "disableSubagent": "Deny specific subagents via permissions: Agent(Explore), Agent(my-custom-agent)"
   }
 }

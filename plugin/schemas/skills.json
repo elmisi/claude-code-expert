@@ -2,31 +2,58 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "description": "Valid skill configuration for Claude Code",
   "location": {
-    "project": ".claude/skills/[name]/SKILL.md",
+    "enterprise": "See managed settings documentation",
     "global": "~/.claude/skills/[name]/SKILL.md",
-    "plugin": "plugin's skills/[name]/SKILL.md (namespaced as /plugin-name:skill-name)"
+    "project": ".claude/skills/[name]/SKILL.md",
+    "plugin": "plugin's skills/[name]/SKILL.md (namespaced as /plugin-name:skill-name)",
+    "commands": ".claude/commands/[name].md (legacy, still works; skills take precedence if same name)"
   },
   "frontmatter": {
-    "required": {
-      "name": {
-        "type": "string",
-        "description": "Skill identifier, used for /skill-name invocation"
-      },
+    "required": {},
+    "recommended": {
       "description": {
         "type": "string",
-        "description": "Brief description of what the skill does"
+        "description": "What the skill does and when to use it. Claude uses this to decide when to apply the skill. If omitted, uses first paragraph of markdown content."
       }
     },
     "optional": {
+      "name": {
+        "type": "string",
+        "description": "Skill identifier, used for /skill-name invocation. If omitted, uses directory name. Lowercase letters, numbers, hyphens only (max 64 chars)."
+      },
       "disable-model-invocation": {
         "type": "boolean",
         "default": false,
-        "description": "If true, skill is only invoked manually via /skill-name. If false (default), Claude may apply it automatically when relevant."
+        "description": "If true, skill is only invoked manually via /skill-name (removed from Claude's context entirely). If false (default), Claude may apply it automatically when relevant."
+      },
+      "user-invocable": {
+        "type": "boolean",
+        "default": true,
+        "description": "If false, hidden from the / menu. Use for background knowledge users shouldn't invoke directly. Only Claude can invoke it."
+      },
+      "argument-hint": {
+        "type": "string",
+        "description": "Hint shown during autocomplete to indicate expected arguments.",
+        "examples": ["[issue-number]", "[filename] [format]"]
+      },
+      "allowed-tools": {
+        "type": "string",
+        "description": "Tools Claude can use without asking permission when this skill is active.",
+        "example": "Read, Grep, Glob"
+      },
+      "model": {
+        "type": "string",
+        "description": "Model to use when this skill is active."
       },
       "context": {
         "type": "string",
         "validValues": ["fork"],
-        "description": "If set to 'fork', the skill runs in a forked sub-agent context rather than the main conversation."
+        "description": "If set to 'fork', the skill runs in a forked sub-agent context rather than the main conversation. The skill content becomes the prompt driving the subagent."
+      },
+      "agent": {
+        "type": "string",
+        "description": "Which subagent type to use when context: fork is set. Options: built-in agents (Explore, Plan, general-purpose) or custom subagent name. Default: general-purpose.",
+        "examples": ["Explore", "Plan", "general-purpose", "my-custom-agent"]
       },
       "hooks": {
         "type": "object",
@@ -35,13 +62,41 @@
     }
   },
   "variables": {
-    "$ARGUMENTS": "Replaced with user-provided arguments after /skill-name"
+    "$ARGUMENTS": "Replaced with all user-provided arguments after /skill-name. If not present in content, appended as 'ARGUMENTS: <value>'.",
+    "$ARGUMENTS[N]": "Access a specific argument by 0-based index (e.g. $ARGUMENTS[0] for the first argument).",
+    "$N": "Shorthand for $ARGUMENTS[N] (e.g. $0 for first argument, $1 for second).",
+    "${CLAUDE_SESSION_ID}": "The current session ID. Useful for logging or session-specific files.",
+    "${CLAUDE_SKILL_DIR}": "The directory containing the skill's SKILL.md file. Use to reference bundled scripts/files."
+  },
+  "dynamicContext": {
+    "description": "The !`command` syntax runs shell commands before the skill content is sent to Claude. Command output replaces the placeholder.",
+    "example": "!`gh pr diff`",
+    "note": "This is preprocessing, not something Claude executes. Claude only sees the final result."
   },
   "structure": {
-    "description": "YAML frontmatter followed by markdown content",
-    "example": "---\nname: skill-name\ndescription: What this skill does\ndisable-model-invocation: true\n---\n\n# Skill Content\n\nInstructions here..."
+    "description": "YAML frontmatter followed by markdown content. Skills can include supporting files in their directory.",
+    "example": "---\nname: skill-name\ndescription: What this skill does\ndisable-model-invocation: true\n---\n\n# Skill Content\n\nInstructions here...",
+    "directoryStructure": {
+      "SKILL.md": "Main instructions (required)",
+      "*.md": "Supporting reference files (loaded on demand)",
+      "scripts/": "Utility scripts Claude can execute"
+    }
+  },
+  "bundledSkills": {
+    "description": "Skills that ship with Claude Code and are available in every session",
+    "skills": {
+      "/batch": "Orchestrate large-scale changes across a codebase in parallel using git worktrees",
+      "/claude-api": "Load Claude API and Agent SDK reference material",
+      "/debug": "Troubleshoot current Claude Code session by reading debug log",
+      "/loop": "Run a prompt repeatedly on an interval",
+      "/simplify": "Review recently changed files for code reuse, quality, and efficiency"
+    }
   },
   "notes": {
-    "hotReloading": "Skills modified in ~/.claude/skills or .claude/skills are immediately available without restarting the session (Claude Code 2.1+)."
+    "hotReloading": "Skills modified in ~/.claude/skills or .claude/skills are immediately available without restarting the session.",
+    "additionalDirs": "Skills in .claude/skills/ within --add-dir directories are loaded automatically and support live change detection.",
+    "nestedDiscovery": "Claude Code discovers skills from nested .claude/skills/ directories (supports monorepo setups).",
+    "contextBudget": "Skill descriptions are loaded at 2% of context window (fallback: 16,000 chars). Override with SLASH_COMMAND_TOOL_CHAR_BUDGET env var.",
+    "permissionControl": "Control skill access via permissions: Skill(name) for exact match, Skill(name *) for prefix match."
   }
 }

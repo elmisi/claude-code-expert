@@ -12,35 +12,45 @@
     "Notification",
     "Stop",
     "PreCompact",
+    "PostCompact",
     "SubagentStart",
     "SubagentStop",
     "TeammateIdle",
     "TaskCompleted",
-    "ConfigChange"
+    "ConfigChange",
+    "InstructionsLoaded",
+    "WorktreeCreate",
+    "WorktreeRemove",
+    "Elicitation",
+    "ElicitationResult"
   ],
-  "validTypes": ["command", "prompt", "agent"],
+  "validTypes": ["command", "http", "prompt", "agent"],
+  "eventHandlerSupport": {
+    "allTypes": ["PermissionRequest", "PostToolUse", "PostToolUseFailure", "PreToolUse", "Stop", "SubagentStop", "TaskCompleted", "UserPromptSubmit"],
+    "commandOnly": ["ConfigChange", "Elicitation", "ElicitationResult", "InstructionsLoaded", "Notification", "PostCompact", "PreCompact", "SessionEnd", "SessionStart", "SubagentStart", "TeammateIdle", "WorktreeCreate", "WorktreeRemove"]
+  },
   "hookHandlerFields": {
     "common": {
       "type": {
         "type": "string",
         "required": true,
-        "validValues": ["command", "prompt", "agent"],
+        "validValues": ["command", "http", "prompt", "agent"],
         "default": "command"
       },
       "timeout": {
-        "type": "integer",
-        "description": "Timeout in milliseconds. Defaults: command=600000, prompt=30000, agent=60000",
-        "required": false
-      },
-      "async": {
-        "type": "boolean",
-        "description": "Run hook in background without blocking Claude. Only for command type.",
-        "default": false,
+        "type": "number",
+        "description": "Timeout in seconds. Defaults: command=600, prompt=30, agent=60",
         "required": false
       },
       "statusMessage": {
         "type": "string",
         "description": "Custom spinner message shown while the hook runs",
+        "required": false
+      },
+      "once": {
+        "type": "boolean",
+        "description": "If true, runs only once per session then removed (skills only)",
+        "default": false,
         "required": false
       }
     },
@@ -49,18 +59,42 @@
         "type": "string",
         "required": true,
         "description": "Shell command to execute"
+      },
+      "async": {
+        "type": "boolean",
+        "description": "Run hook in background without blocking Claude. Only for command type.",
+        "default": false,
+        "required": false
+      }
+    },
+    "http": {
+      "url": {
+        "type": "string",
+        "required": true,
+        "description": "URL to send POST request to"
+      },
+      "headers": {
+        "type": "object",
+        "required": false,
+        "description": "HTTP headers with env var interpolation ($VAR or ${VAR})"
+      },
+      "allowedEnvVars": {
+        "type": "array",
+        "items": "string",
+        "required": false,
+        "description": "Environment variable names allowed in headers"
       }
     },
     "prompt": {
       "prompt": {
         "type": "string",
         "required": true,
-        "description": "Text prompt for single-turn LLM evaluation"
+        "description": "Text prompt for single-turn LLM evaluation. Use $ARGUMENTS for hook input JSON"
       },
       "model": {
         "type": "string",
         "required": false,
-        "description": "Model to use for evaluation (default: haiku)",
+        "description": "Model to use for evaluation (default: fast model)",
         "validValues": ["opus", "sonnet", "haiku"]
       }
     },
@@ -68,12 +102,12 @@
       "prompt": {
         "type": "string",
         "required": true,
-        "description": "Text prompt for multi-turn agent verification"
+        "description": "Text prompt for multi-turn agent verification. Use $ARGUMENTS for hook input JSON"
       },
       "model": {
         "type": "string",
         "required": false,
-        "description": "Model to use for the agent (default: haiku)",
+        "description": "Model to use for the agent (default: fast model)",
         "validValues": ["opus", "sonnet", "haiku"]
       }
     }
@@ -81,7 +115,7 @@
   "matchersByEvent": {
     "PreToolUse": {
       "description": "Tool name pattern",
-      "examples": ["Bash", "Edit", "Write", "Edit|Write", "Read", "Glob", "Grep", "WebFetch", "WebSearch", "Task", "NotebookEdit", "mcp__.*", "mcp__github__.*"]
+      "examples": ["Bash", "Edit", "Write", "Edit|Write", "Read", "Glob", "Grep", "Agent", "WebFetch", "WebSearch", "mcp__.*", "mcp__github__.*"]
     },
     "PostToolUse": {
       "description": "Tool name pattern (same as PreToolUse)",
@@ -120,6 +154,10 @@
       "description": "What triggered compaction",
       "validValues": ["manual", "auto"]
     },
+    "PostCompact": {
+      "description": "What triggered compaction (same as PreCompact)",
+      "validValues": ["manual", "auto"]
+    },
     "UserPromptSubmit": {
       "description": "No matcher support - always fires",
       "note": "Matcher is ignored for this event"
@@ -131,7 +169,7 @@
     "TeammateIdle": {
       "description": "Agent team teammate about to go idle",
       "examples": ["agent-name", "frontend", "backend"],
-      "note": "Matcher is the agent name. Exit 2 only (no hookSpecificOutput support)"
+      "note": "No matcher support. Exit 2 only (no hookSpecificOutput support)"
     },
     "TaskCompleted": {
       "description": "Task being marked completed",
@@ -141,6 +179,28 @@
       "description": "Config file changed during session",
       "validValues": ["user_settings", "project_settings", "local_settings", "policy_settings", "skills"],
       "note": "Matcher is the config type that changed"
+    },
+    "InstructionsLoaded": {
+      "description": "When CLAUDE.md or .claude/rules/*.md file is loaded",
+      "note": "No matcher support. Exit code is ignored."
+    },
+    "WorktreeCreate": {
+      "description": "When a worktree is being created",
+      "note": "No matcher support. Any non-zero exit fails worktree creation. Hook prints absolute path to worktree on stdout."
+    },
+    "WorktreeRemove": {
+      "description": "When a worktree is being removed",
+      "note": "No matcher support. Receives worktree_path in input. Logged in debug mode only."
+    },
+    "Elicitation": {
+      "description": "When an MCP server requests user input during a tool call",
+      "examples": ["mcp-server-name"],
+      "note": "Matcher is the MCP server name (regex). Exit 2 denies elicitation."
+    },
+    "ElicitationResult": {
+      "description": "After a user responds to an MCP elicitation",
+      "examples": ["mcp-server-name"],
+      "note": "Matcher is the MCP server name (regex). Exit 2 blocks response."
     }
   },
   "capabilities": {
@@ -150,9 +210,13 @@
       "usage": "Return JSON with hookSpecificOutput.updatedInput to rewrite tool arguments",
       "example": {
         "hookSpecificOutput": {
+          "hookEventName": "PreToolUse",
+          "permissionDecision": "allow",
+          "permissionDecisionReason": "Auto-approved by hook",
           "updatedInput": {
             "command": "modified-command"
-          }
+          },
+          "additionalContext": "Context for Claude"
         }
       }
     },
@@ -160,12 +224,46 @@
       "description": "PermissionRequest hooks can control permission decisions",
       "events": ["PermissionRequest"],
       "usage": "Return hookSpecificOutput.decision with behavior (allow/deny), updatedInput, updatedPermissions, message"
+    },
+    "topLevelDecision": {
+      "description": "Several events support top-level decision/reason for blocking",
+      "events": ["UserPromptSubmit", "PostToolUse", "PostToolUseFailure", "Stop", "SubagentStop", "ConfigChange"],
+      "usage": "Return {\"decision\": \"block\", \"reason\": \"Explanation\"}"
+    },
+    "elicitationAction": {
+      "description": "Elicitation hooks can control the action",
+      "events": ["Elicitation", "ElicitationResult"],
+      "usage": "Return hookSpecificOutput.action (accept/decline/cancel) with optional content"
+    },
+    "universalFields": {
+      "description": "All events support these stdout JSON fields",
+      "fields": {
+        "continue": "If false, Claude stops entirely (takes precedence over event-specific fields)",
+        "stopReason": "Message shown to user when continue is false",
+        "suppressOutput": "If true, hides stdout from verbose mode",
+        "systemMessage": "Warning message shown to user"
+      }
+    },
+    "promptAgentResponse": {
+      "description": "Prompt and agent hook types return structured responses",
+      "format": {"ok": true, "reason": "Explanation (required if ok is false)"}
     }
   },
   "exitCodes": {
     "0": "Allow/proceed with the action",
     "2": "Block the action (stderr becomes Claude's feedback)",
     "other": "Allow but log error (visible in verbose mode)"
+  },
+  "exitCode2BehaviorPerEvent": {
+    "blocking": {
+      "description": "These events can be blocked with exit code 2",
+      "events": ["PreToolUse", "PermissionRequest", "UserPromptSubmit", "Stop", "SubagentStop", "TeammateIdle", "TaskCompleted", "ConfigChange", "Elicitation", "ElicitationResult"]
+    },
+    "nonBlocking": {
+      "description": "Exit code 2 shows stderr but does not block",
+      "events": ["PostToolUse", "PostToolUseFailure", "Notification", "SubagentStart", "SessionStart", "SessionEnd", "PreCompact", "PostCompact", "InstructionsLoaded"],
+      "note": "WorktreeCreate: any non-zero exit fails creation. WorktreeRemove: logged in debug only."
+    }
   },
   "structure": {
     "description": "Correct JSON structure for hooks",
@@ -186,18 +284,20 @@
     }
   },
   "hookInput": {
-    "description": "Hook commands receive a JSON object via stdin (NOT via environment variables)",
-    "method": "stdin",
+    "description": "Hook commands receive a JSON object via stdin (NOT via environment variables). HTTP hooks receive the same JSON as POST body.",
+    "method": "stdin (command) or POST body (http)",
     "structure": {
       "session_id": "Current session identifier",
       "transcript_path": "Path to session transcript file",
       "cwd": "Current working directory",
-      "permission_mode": "Current permission mode",
+      "permission_mode": "Current permission mode (default, plan, acceptEdits, dontAsk, bypassPermissions)",
       "hook_event_name": "The event that triggered the hook (e.g. PostToolUse)",
       "tool_name": "Name of the tool (for PreToolUse/PostToolUse events)",
       "tool_input": "Object with the tool's input parameters (e.g. file_path, command)",
       "tool_response": "Object with the tool's response (PostToolUse only)",
-      "tool_use_id": "Unique identifier for the tool invocation"
+      "tool_use_id": "Unique identifier for the tool invocation",
+      "agent_id": "Subagent ID (only when hook fires inside subagent call)",
+      "agent_type": "Agent name (only with --agent or inside subagent)"
     },
     "example_read": "cat | jq -r '.tool_input.file_path'",
     "note": "CLAUDE_TOOL_INPUT and TOOL_INPUT env vars are NOT set. Always read from stdin."
@@ -209,6 +309,17 @@
     "CLAUDE_ENV_FILE": "File path for persisting environment variables (SessionStart hooks)",
     "CLAUDE_PLUGIN_ROOT": "Root directory of the plugin (for referencing bundled scripts)",
     "CLAUDE_CODE_REMOTE": "Set to 'true' when running in remote/web environments"
+  },
+  "configLocations": {
+    "description": "Where hooks can be configured",
+    "locations": [
+      "~/.claude/settings.json (all projects)",
+      ".claude/settings.json (single project, shareable)",
+      ".claude/settings.local.json (single project, not shareable)",
+      "Managed policy settings (organization-wide)",
+      "Plugin hooks/hooks.json (when plugin enabled)",
+      "Skill/agent frontmatter (component active)"
+    ]
   },
   "invalidEvents": {
     "description": "These event names DO NOT EXIST - never use them",

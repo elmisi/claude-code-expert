@@ -2,26 +2,28 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "description": "Valid agent team configuration for Claude Code (experimental)",
   "location": {
-    "global": "~/.claude/teams/{team-name}/config.json"
+    "teamConfig": "~/.claude/teams/{team-name}/config.json (auto-generated)",
+    "taskList": "~/.claude/tasks/{team-name}/"
+  },
+  "orchestration": {
+    "description": "Agent teams are orchestrated via natural language. You describe the task and team structure, and Claude creates the team, spawns teammates, and coordinates work.",
+    "examples": [
+      "Create an agent team to review PR #142 with security, performance, and testing reviewers",
+      "Spawn 3 teammates to research authentication, database, and API modules in parallel"
+    ]
   },
   "structure": {
-    "description": "JSON object defining a team of Claude agents",
+    "description": "Auto-generated team config JSON (not hand-written)",
     "example": {
       "name": "team-name",
       "description": "What the team does",
-      "agents": [
+      "members": [
         {
           "name": "agent-name",
-          "role": "Description of agent's role",
-          "tools": ["Read", "Grep", "Glob", "Bash"],
-          "model": "inherit"
+          "agentId": "auto-generated-id",
+          "agentType": "general-purpose"
         }
-      ],
-      "settings": {
-        "displayMode": "in-process",
-        "delegateMode": false,
-        "requirePlanApproval": false
-      }
+      ]
     }
   },
   "fields": {
@@ -35,94 +37,82 @@
       "required": true,
       "description": "Description of what the team does"
     },
-    "agents": {
+    "members": {
       "type": "array",
-      "required": true,
-      "description": "Array of agent configurations",
+      "description": "Array of team members (auto-populated when teammates are spawned)",
       "items": {
-        "name": {
-          "type": "string",
-          "required": true,
-          "description": "Unique name for the agent within the team"
-        },
-        "role": {
-          "type": "string",
-          "required": true,
-          "description": "Description of the agent's role and responsibilities"
-        },
-        "tools": {
-          "type": "array",
-          "items": "string",
-          "required": false,
-          "description": "List of tools the agent can use",
-          "validValues": ["Read", "Grep", "Glob", "Bash", "Edit", "Write", "WebFetch", "WebSearch", "Task", "NotebookEdit"]
-        },
-        "model": {
-          "type": "string",
-          "required": false,
-          "default": "inherit",
-          "description": "Model to use for this agent (inherit uses the parent session model)"
-        }
-      }
-    },
-    "settings": {
-      "type": "object",
-      "required": false,
-      "description": "Team-level settings",
-      "properties": {
-        "displayMode": {
-          "type": "string",
-          "validValues": ["in-process", "split-panes"],
-          "default": "in-process",
-          "description": "How agent outputs are displayed"
-        },
-        "delegateMode": {
-          "type": "boolean",
-          "default": false,
-          "description": "When true, the lead agent only coordinates and does not do direct work"
-        },
-        "requirePlanApproval": {
-          "type": "boolean",
-          "default": false,
-          "description": "When true, the user must approve the plan before agents start working"
-        }
+        "name": "Teammate display name",
+        "agentId": "Auto-generated agent ID",
+        "agentType": "Agent type used"
       }
     }
   },
+  "teammateMode": {
+    "description": "How teammates are displayed. Configured in settings.json as 'teammateMode' or via --teammate-mode flag.",
+    "validValues": {
+      "in-process": "All teammates run inside main terminal. Use Shift+Down to cycle. Works in any terminal.",
+      "tmux": "Each teammate gets its own pane. Requires tmux or iTerm2 with it2 CLI.",
+      "auto": "Uses split panes if already in tmux, otherwise in-process. This is the default."
+    },
+    "settingsExample": {"teammateMode": "in-process"}
+  },
+  "teamComposition": {
+    "description": "Team structure is specified via natural language, not declarative config",
+    "controlledVia": "Prompts to the team lead",
+    "examples": {
+      "specifyCount": "Create a team with 4 teammates",
+      "specifyModel": "Use Sonnet for each teammate",
+      "requireApproval": "Require plan approval before they make any changes",
+      "assignRoles": "One focused on security, one on performance, one on testing"
+    }
+  },
+  "architecture": {
+    "teamLead": "The main Claude Code session that creates the team, spawns teammates, and coordinates work",
+    "teammates": "Separate Claude Code instances that each work on assigned tasks",
+    "taskList": "Shared list of work items that teammates claim and complete (pending → in progress → completed)",
+    "mailbox": "Messaging system for direct communication between agents"
+  },
+  "permissions": {
+    "description": "Teammates start with the lead's permission settings. If lead uses --dangerously-skip-permissions, all teammates do too.",
+    "note": "Individual teammate modes can be changed after spawning."
+  },
   "requires": {
     "description": "Prerequisites for using agent teams",
-    "environmentVariable": "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1"
+    "environmentVariable": "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1",
+    "minimumVersion": "Claude Code v2.1.32 or later"
   },
   "limitations": {
     "description": "Important limitations to know",
     "items": [
-      "Experimental feature - API and behavior may change without notice",
+      "Experimental feature — API and behavior may change without notice",
+      "No session resumption with in-process teammates (/resume and /rewind don't restore them)",
+      "Task status can lag — teammates may fail to mark tasks as completed",
+      "Shutdown can be slow — teammates finish current request before stopping",
+      "One team per session — clean up current team before starting a new one",
+      "No nested teams — teammates cannot spawn their own teams",
+      "Lead is fixed — cannot promote a teammate or transfer leadership",
       "Higher token consumption due to multiple concurrent agents",
-      "Each agent runs in its own context with limited shared state",
-      "Requires the CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1 environment variable"
+      "Split panes require tmux or iTerm2 (not supported in VS Code terminal, Windows Terminal, or Ghostty)"
     ]
+  },
+  "hooks": {
+    "TeammateIdle": "Runs when a teammate is about to go idle. Exit 2 sends feedback and keeps teammate working.",
+    "TaskCompleted": "Runs when a task is being marked complete. Exit 2 prevents completion and sends feedback."
   },
   "example": {
     "name": "code-review-team",
     "description": "Team of agents for comprehensive code review",
-    "agents": [
+    "members": [
       {
         "name": "security-reviewer",
-        "role": "Review code for security vulnerabilities and OWASP top 10",
-        "tools": ["Read", "Grep", "Glob", "Bash"],
-        "model": "inherit"
+        "agentId": "agent-abc123",
+        "agentType": "general-purpose"
       },
       {
         "name": "performance-reviewer",
-        "role": "Review code for performance issues, memory leaks, and optimization opportunities",
-        "tools": ["Read", "Grep", "Glob", "Bash"],
-        "model": "inherit"
+        "agentId": "agent-def456",
+        "agentType": "general-purpose"
       }
-    ],
-    "settings": {
-      "displayMode": "in-process",
-      "delegateMode": false,
-      "requirePlanApproval": false
-    }
+    ]
   }
 }

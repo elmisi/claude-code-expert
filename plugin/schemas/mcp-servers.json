@@ -2,8 +2,11 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "description": "Valid MCP (Model Context Protocol) server configuration for Claude Code",
   "location": {
-    "project": ".mcp.json",
-    "global": "~/.claude.json (under mcpServers key)"
+    "local": "~/.claude.json under project path (default scope, private to you, current project only)",
+    "project": ".mcp.json (checked into version control, shared with team)",
+    "user": "~/.claude.json under mcpServers key (available across all projects)",
+    "managed": "managed-mcp.json in system directories (organization-wide, exclusive control)",
+    "plugin": "Plugin's .mcp.json or inline in plugin.json"
   },
   "structure": {
     "description": "JSON object with server entries keyed by server name",
@@ -22,21 +25,27 @@
   },
   "serverTypes": {
     "stdio": {
-      "description": "Server communicates via stdin/stdout",
-      "required": ["type", "command"],
+      "description": "Server communicates via stdin/stdout (local processes)",
+      "required": ["command"],
       "optional": ["args", "env"]
     },
+    "http": {
+      "description": "Server communicates via streamable HTTP (recommended for remote servers)",
+      "required": ["url"],
+      "optional": ["headers", "env", "oauth"]
+    },
     "sse": {
-      "description": "Server communicates via Server-Sent Events over HTTP",
-      "required": ["type", "url"],
-      "optional": ["env"]
+      "description": "Server communicates via Server-Sent Events over HTTP (DEPRECATED - use http instead)",
+      "required": ["url"],
+      "optional": ["headers", "env", "oauth"],
+      "deprecated": true
     }
   },
   "fields": {
     "type": {
       "type": "string",
-      "validValues": ["stdio", "sse"],
-      "description": "Transport type for the server"
+      "validValues": ["stdio", "http", "sse"],
+      "description": "Transport type for the server. 'http' is recommended for remote servers."
     },
     "command": {
       "type": "string",
@@ -53,8 +62,30 @@
     },
     "url": {
       "type": "string",
-      "description": "URL of the SSE endpoint (required for sse type)"
+      "description": "URL of the endpoint (required for http and sse types)"
+    },
+    "headers": {
+      "type": "object",
+      "description": "HTTP headers with environment variable interpolation ($VAR or ${VAR}). Use with allowedEnvVars for security.",
+      "example": {"Authorization": "Bearer $MY_TOKEN"}
+    },
+    "oauth": {
+      "type": "object",
+      "description": "OAuth 2.0 configuration for servers requiring authentication",
+      "fields": {
+        "clientId": "Pre-configured OAuth client ID",
+        "callbackPort": "Fixed port for OAuth callback URL (http://localhost:PORT/callback)",
+        "authServerMetadataUrl": "Override URL for OAuth metadata discovery"
+      }
     }
+  },
+  "envVarExpansion": {
+    "description": "Environment variable expansion is supported in .mcp.json files",
+    "syntax": {
+      "${VAR}": "Expands to the value of environment variable VAR",
+      "${VAR:-default}": "Expands to VAR if set, otherwise uses default"
+    },
+    "locations": ["command", "args", "env", "url", "headers"]
   },
   "toolNaming": {
     "description": "MCP tools appear with a namespaced convention",
@@ -73,33 +104,54 @@
       "mcp__.*"
     ]
   },
+  "features": {
+    "resources": "MCP servers can expose resources referenced via @ mentions (e.g. @github:issue://123)",
+    "prompts": "MCP server prompts appear as /mcp__servername__promptname commands",
+    "toolSearch": "When MCP tools exceed 10% of context, Claude Code defers tools and discovers them on demand via ToolSearch",
+    "elicitation": "MCP servers can request structured input from users mid-task via elicitation dialogs",
+    "dynamicUpdates": "Claude Code supports MCP list_changed notifications for dynamic tool updates"
+  },
+  "scopes": {
+    "description": "Scope hierarchy for MCP servers (highest to lowest priority)",
+    "order": ["local (default)", "project (.mcp.json)", "user"],
+    "note": "When servers with the same name exist at multiple scopes, higher-priority scope wins"
+  },
   "limitations": {
     "description": "Important limitations to know",
     "items": [
       "Background subagents cannot use MCP tools",
       "MCP servers must be installed and accessible on the system",
       "Environment variables in env are passed only to the server process",
-      "Server crashes require manual restart (re-enter the session)"
+      "Server crashes require manual restart (re-enter the session)",
+      "SSE transport is deprecated — use http transport instead"
     ]
+  },
+  "managedMcp": {
+    "description": "Organization-wide MCP control via managed-mcp.json",
+    "locations": {
+      "macOS": "/Library/Application Support/ClaudeCode/managed-mcp.json",
+      "linux": "/etc/claude-code/managed-mcp.json",
+      "windows": "C:\\Program Files\\ClaudeCode\\managed-mcp.json"
+    },
+    "note": "When deployed, takes exclusive control — users cannot add/modify MCP servers"
   },
   "example": {
     "mcpServers": {
       "github": {
-        "type": "stdio",
-        "command": "npx",
-        "args": ["-y", "@modelcontextprotocol/server-github"],
-        "env": {
-          "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
-        }
+        "type": "http",
+        "url": "https://api.githubcopilot.com/mcp/"
       },
       "postgres": {
         "type": "stdio",
         "command": "npx",
-        "args": ["-y", "@modelcontextprotocol/server-postgres", "postgresql://localhost/mydb"]
+        "args": ["-y", "@bytebase/dbhub", "--dsn", "postgresql://localhost/mydb"]
       },
       "remote-api": {
-        "type": "sse",
-        "url": "http://localhost:3001/sse"
+        "type": "http",
+        "url": "https://mcp.example.com/mcp",
+        "headers": {
+          "Authorization": "Bearer ${API_KEY}"
+        }
       }
     }
   }

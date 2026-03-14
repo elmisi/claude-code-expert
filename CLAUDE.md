@@ -28,7 +28,7 @@ When Claude Code changes (new hook events, new tools, etc.), update the **schema
 
 The core is `plugin/skills/automate/SKILL.md` which implements:
 
-1. **Command Router**: Parses `$ARGUMENTS` to dispatch sub-commands (`list`, `edit`, `delete`, `export`, `import`) or fall through to the creation workflow.
+1. **Command Router**: Parses `$ARGUMENTS` to dispatch sub-commands (`list`, `edit`, `delete`, `export`, `import`, `verify`) or fall through to the creation workflow.
 2. **8-Step Creation Workflow**: Load schemas → Interview → Decide → Explain → Create → Validate → Verify completeness → Test → Report.
 3. **Two-Level Validation**: SKILL.md loads schemas at Step 0, validates against them at Step 5, and `plugin/scripts/validate-config.sh` provides external validation.
 4. **Registry System**: All automations tracked in `~/.claude/automations-registry.json` with metadata (id, name, type, scope, path, timestamps). Enables list/edit/delete/export/import.
@@ -54,7 +54,7 @@ The marketplace.json version is used by Claude Code's plugin update system. If o
 ## Running Tests
 
 ```bash
-# Structure tests — fast, no Claude needed (42 tests, IDs: STRUCT-01..STRUCT-42)
+# Structure tests — fast, no Claude needed (72 tests, IDs: STRUCT-01..STRUCT-72)
 ./tests/scripts/run-tests.sh structure
 
 # Fixture tests — validates expected output structures, no Claude needed (IDs: TEST-01..TEST-06)
@@ -73,6 +73,8 @@ The marketplace.json version is used by Claude Code's plugin update system. If o
 
 CI runs structure + e2e tests only (no API key needed). Interactive tests are local-only.
 
+**Prerequisites**: Tests require `bash` and `jq`. CI installs `jq` explicitly.
+
 Test helpers are in `tests/scripts/helpers.sh` (assertions, sandbox management, `run_claude_headless()`).
 
 ### Validation Script
@@ -88,20 +90,21 @@ plugin/scripts/validate-config.sh <type> <content>
 
 Schemas in `plugin/schemas/` define what's valid. Key gotchas:
 
-- **Hook events**: 15 valid events (`PreToolUse`, `PostToolUse`, `SessionStart`, `SessionEnd`, `UserPromptSubmit`, `PermissionRequest`, `Notification`, `Stop`, `PreCompact`, `SubagentStart`, `SubagentStop`, `PostToolUseFailure`, `TeammateIdle`, `TaskCompleted`, `ConfigChange`). NEVER use `PreCommit`, `PostCommit`, `PreBash`, `PostBash`, `BeforeToolUse`, `AfterToolUse` — they don't exist. Note: `TeammateIdle` and `TaskCompleted` only support exit code 2 (no JSON hookSpecificOutput).
+- **Hook events**: 21 valid events (`PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `SessionStart`, `SessionEnd`, `UserPromptSubmit`, `PermissionRequest`, `Notification`, `Stop`, `PreCompact`, `PostCompact`, `SubagentStart`, `SubagentStop`, `TeammateIdle`, `TaskCompleted`, `ConfigChange`, `InstructionsLoaded`, `WorktreeCreate`, `WorktreeRemove`, `Elicitation`, `ElicitationResult`). NEVER use `PreCommit`, `PostCommit`, `PreBash`, `PostBash`, `BeforeToolUse`, `AfterToolUse` — they don't exist.
 - **Hook exit codes**: `0` = allow, `2` = block (stderr becomes feedback), anything else = allow but log error. Exit code 1 does NOT block.
 - **Hook structure**: Nested — `hooks.EventName[].hooks[]` (array inside array), not flat.
-- **Hook handler types**: `command` (shell script), `prompt` (single-turn LLM), `agent` (multi-turn LLM). Fields: `async`, `timeout`, `statusMessage`, `model`.
+- **Hook handler types**: `command` (shell script), `http` (POST to URL), `prompt` (single-turn LLM), `agent` (multi-turn LLM). Not all events support all types — some events are `command`-only. Fields: `async`, `timeout`, `statusMessage`, `model`, `once`. HTTP type adds: `url`, `headers`, `allowedEnvVars`.
 - **Hook input**: Tool input is passed via **stdin** as JSON (NOT via environment variables). Read with `cat | jq -r '.tool_input.file_path'`. Available env vars (without tool input): `CLAUDE_PROJECT_DIR`, `CLAUDE_SESSION_ID`, `CLAUDE_ENV_FILE`, `CLAUDE_PLUGIN_ROOT`, `CLAUDE_CODE_REMOTE`.
 - **Hook special outputs**: `PreToolUse` hooks can modify tool inputs via stdout JSON `{"hookSpecificOutput": {"updatedInput": {...}}}`. `PermissionRequest` hooks can control the decision via `{"hookSpecificOutput": {"decision": "allow"|"deny", "reason": "..."}}`.
 - **Permissions**: Don't work with `--dangerously-skip-permissions`. Use hooks (exit 2) as a guaranteed alternative.
-- **Skills**: `disable-model-invocation: true` = manual only (invoked via `/skill-name`); `false` = Claude auto-applies when relevant. Optional: `context: fork`, `hooks`.
-- **Subagent tools**: `Read`, `Grep`, `Glob`, `Bash`, `Edit`, `Write`, `WebFetch`, `WebSearch`, `Task`, `NotebookEdit`, `AskUserQuestion`, `TaskOutput`, `ExitPlanMode`, `MCPSearch`. Plus MCP tools as `mcp__<server>__<tool>`.
+- **Skills**: `disable-model-invocation: true` = manual only (invoked via `/skill-name`); `false` = Claude auto-applies when relevant. Optional: `context: fork`, `agent`, `hooks`, `allowed-tools`, `model`, `user-invocable`, `argument-hint`. Variables: `$ARGUMENTS`, `$ARGUMENTS[N]`, `$N`, `${CLAUDE_SESSION_ID}`, `${CLAUDE_SKILL_DIR}`. Supports `!`command`` for dynamic context injection.
+- **Subagent tools**: `Agent`, `AskUserQuestion`, `Bash`, `CronCreate`, `CronDelete`, `CronList`, `Edit`, `EnterPlanMode`, `EnterWorktree`, `ExitPlanMode`, `ExitWorktree`, `Glob`, `Grep`, `ListMcpResourcesTool`, `LSP`, `NotebookEdit`, `Read`, `ReadMcpResourceTool`, `Skill`, `TaskCreate`, `TaskGet`, `TaskList`, `TaskOutput`, `TaskStop`, `TaskUpdate`, `TodoWrite`, `ToolSearch`, `WebFetch`, `WebSearch`, `Write`. Plus MCP tools as `mcp__<server>__<tool>`. Use `Agent(type1, type2)` to restrict which subagent types can be spawned.
 - **Subagent models**: `opus`, `sonnet`, `haiku`, `inherit` (default: `inherit`).
-- **Subagent memory field**: Optional `memory` array in frontmatter — values `user`, `project`, `local` control which memory files the subagent can read.
-- **MCP servers**: Types: `stdio` (requires `command`) and `sse` (requires `url`). Tools named `mcp__<server>__<tool>`.
+- **Subagent memory field**: Optional `memory` in frontmatter — values `user`, `project`, `local` give the subagent a persistent directory across conversations.
+- **Subagent new fields**: `maxTurns` (max agentic turns), `mcpServers` (scoped MCP servers), `background` (always run in background), `isolation: worktree` (isolated git worktree).
+- **MCP servers**: Types: `stdio` (requires `command`), `http` (requires `url`, recommended for remote), `sse` (deprecated, requires `url`). HTTP supports `headers` (with env var interpolation) and `oauth`. Tools named `mcp__<server>__<tool>`. Supports env var expansion in `.mcp.json` (`${VAR}`, `${VAR:-default}`). Features: resources (@ mentions), prompts (as commands), tool search, elicitation.
 - **LSP servers**: Requires `command` and `languages` array.
-- **Agent teams**: Experimental (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`). Requires `name`, `description`, `agents` array.
+- **Agent teams**: Experimental (`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`, v2.1.32+). Teams are orchestrated via natural language, not declarative JSON. Display mode configured via `teammateMode` setting (`in-process`, `tmux`, `auto`).
 
 ## Automation Decision Matrix
 

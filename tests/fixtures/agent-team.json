@@ -14,10 +14,5 @@
       "tools": ["Read", "Grep", "Glob", "Bash"],
       "model": "inherit"
     }
-  ],
-  "settings": {
-    "displayMode": "in-process",
-    "delegateMode": false,
-    "requirePlanApproval": false
-  }
+  ]
 }

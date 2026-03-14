@@ -63,11 +63,17 @@ VALID_HOOK_EVENTS=(
     "Notification"
     "Stop"
     "PreCompact"
+    "PostCompact"
     "SubagentStart"
     "SubagentStop"
     "TeammateIdle"
     "TaskCompleted"
     "ConfigChange"
+    "InstructionsLoaded"
+    "WorktreeCreate"
+    "WorktreeRemove"
+    "Elicitation"
+    "ElicitationResult"
 )
 
 # Invalid/non-existent hook events (common mistakes)
@@ -85,16 +91,16 @@ INVALID_HOOK_EVENTS=(
 )
 
 # Valid hook types
-VALID_HOOK_TYPES=("command" "prompt" "agent")
+VALID_HOOK_TYPES=("command" "http" "prompt" "agent")
 
 # Valid subagent tools
-VALID_TOOLS=("Read" "Grep" "Glob" "Bash" "Edit" "Write" "WebFetch" "WebSearch" "Task" "NotebookEdit" "AskUserQuestion" "TaskOutput" "ExitPlanMode" "MCPSearch")
+VALID_TOOLS=("Agent" "AskUserQuestion" "Bash" "CronCreate" "CronDelete" "CronList" "Edit" "EnterPlanMode" "EnterWorktree" "ExitPlanMode" "ExitWorktree" "Glob" "Grep" "ListMcpResourcesTool" "LSP" "NotebookEdit" "Read" "ReadMcpResourceTool" "Skill" "TaskCreate" "TaskGet" "TaskList" "TaskOutput" "TaskStop" "TaskUpdate" "TodoWrite" "ToolSearch" "WebFetch" "WebSearch" "Write")
 
 # Valid models
 VALID_MODELS=("opus" "sonnet" "haiku" "inherit")
 
 # Valid MCP server types
-VALID_MCP_TYPES=("stdio" "sse")
+VALID_MCP_TYPES=("stdio" "http" "sse")
 
 validate_hooks() {
     local content="$1"
@@ -200,6 +206,15 @@ validate_hooks() {
                     fi
                 fi
 
+                # Check url exists for http type
+                if [ "$hook_type" == "http" ]; then
+                    local url=$(echo "$hook" | jq -r '.url // empty')
+                    if [ -z "$url" ]; then
+                        error "Event '$event' http hook missing 'url' field"
+                        ((errors++))
+                    fi
+                fi
+
                 # Check prompt exists for prompt/agent type
                 if [ "$hook_type" == "prompt" ] || [ "$hook_type" == "agent" ]; then
                     local prompt=$(echo "$hook" | jq -r '.prompt // empty')
@@ -243,6 +258,13 @@ validate_skill() {
     local dmi=$(echo "$frontmatter" | grep "^disable-model-invocation:" | cut -d: -f2 | tr -d ' ')
     if [ -n "$dmi" ] && [ "$dmi" != "true" ] && [ "$dmi" != "false" ]; then
         error "disable-model-invocation must be 'true' or 'false', got '$dmi'"
+        ((errors++))
+    fi
+
+    # Validate user-invocable if present
+    local ui=$(echo "$frontmatter" | grep "^user-invocable:" | cut -d: -f2 | tr -d ' ')
+    if [ -n "$ui" ] && [ "$ui" != "true" ] && [ "$ui" != "false" ]; then
+        error "user-invocable must be 'true' or 'false', got '$ui'"
         ((errors++))
     fi
 
@@ -297,11 +319,19 @@ validate_subagent() {
     fi
 
     # Validate tools if present
-    local tools=$(echo "$frontmatter" | grep "^tools:" | cut -d: -f2)
-    if [ -n "$tools" ]; then
-        IFS=',' read -ra tool_array <<< "$tools"
+    local tools_line=$(echo "$frontmatter" | grep "^tools:" | cut -d: -f2)
+    if [ -n "$tools_line" ]; then
+        # First, remove Agent(...) patterns (may contain commas inside parens)
+        local tools_cleaned=$(echo "$tools_line" | sed 's/Agent([^)]*)//g')
+        local has_agent_paren=$(echo "$tools_line" | grep -o 'Agent([^)]*)' || true)
+
+        IFS=',' read -ra tool_array <<< "$tools_cleaned"
         for tool in "${tool_array[@]}"; do
             tool=$(echo "$tool" | tr -d ' ')
+            # Skip empty entries (left by Agent(...) removal)
+            if [ -z "$tool" ]; then
+                continue
+            fi
             # Allow MCP tools (mcp__*) without validation
             if [[ "$tool" == mcp__* ]]; then
                 continue
@@ -350,6 +380,20 @@ validate_subagent() {
             error "Invalid memory scope '$mem'. Valid: user, project, local"
             ((errors++))
         fi
+    fi
+
+    # Validate background if present
+    local bg=$(echo "$frontmatter" | grep "^background:" | cut -d: -f2 | tr -d ' ')
+    if [ -n "$bg" ] && [ "$bg" != "true" ] && [ "$bg" != "false" ]; then
+        error "background must be 'true' or 'false', got '$bg'"
+        ((errors++))
+    fi
+
+    # Validate isolation if present
+    local iso=$(echo "$frontmatter" | grep "^isolation:" | cut -d: -f2 | tr -d ' ')
+    if [ -n "$iso" ] && [ "$iso" != "worktree" ]; then
+        error "isolation must be 'worktree', got '$iso'"
+        ((errors++))
     fi
 
     return $errors
@@ -458,7 +502,7 @@ validate_mcp_servers() {
         # Check type field
         local server_type=$(echo "$server_config" | jq -r '.type // empty')
         if [ -z "$server_type" ]; then
-            error "Server '$server' missing 'type' field (must be 'stdio' or 'sse')"
+            error "Server '$server' missing 'type' field (must be 'stdio', 'http', or 'sse')"
             ((errors++))
             continue
         fi
@@ -482,10 +526,10 @@ validate_mcp_servers() {
                 error "Server '$server' (stdio) missing 'command' field"
                 ((errors++))
             fi
-        elif [ "$server_type" == "sse" ]; then
+        elif [ "$server_type" == "http" ] || [ "$server_type" == "sse" ]; then
             local url=$(echo "$server_config" | jq -r '.url // empty')
             if [ -z "$url" ]; then
-                error "Server '$server' (sse) missing 'url' field"
+                error "Server '$server' ($server_type) missing 'url' field"
                 ((errors++))
             fi
         fi
@@ -591,7 +635,7 @@ validate_agent_team() {
         ((errors++))
     fi
 
-    # Validate each agent
+    # Validate each agent/member
     for ((i=0; i<num_agents; i++)); do
         local agent=$(echo "$content" | jq ".agents[$i]")
 
@@ -601,12 +645,7 @@ validate_agent_team() {
             ((errors++))
         fi
 
-        local agent_role=$(echo "$agent" | jq -r '.role // empty')
-        if [ -z "$agent_role" ]; then
-            error "Agent #$((i+1)) missing 'role' field"
-            ((errors++))
-        fi
-
+        # role is optional (teams can be orchestrated via natural language)
         # Validate model if present
         local agent_model=$(echo "$agent" | jq -r '.model // empty')
         if [ -n "$agent_model" ]; then
@@ -623,13 +662,6 @@ validate_agent_team() {
             fi
         fi
     done
-
-    # Validate settings if present
-    local display_mode=$(echo "$content" | jq -r '.settings.displayMode // empty')
-    if [ -n "$display_mode" ] && [ "$display_mode" != "in-process" ] && [ "$display_mode" != "split-panes" ]; then
-        error "Invalid displayMode '$display_mode'. Valid: in-process, split-panes"
-        ((errors++))
-    fi
 
     return $errors
 }

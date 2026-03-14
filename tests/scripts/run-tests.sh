@@ -229,6 +229,162 @@ run_structure_tests() {
     assert_validation_passes "$VALIDATE" hooks \
         '{"hooks":{"ConfigChange":[{"matcher":"user_settings","hooks":[{"type":"command","command":"echo changed"}]}]}}' \
         "STRUCT-42: accept ConfigChange hook event"
+
+    # ============================================
+    # NEW EVENT TESTS (v2.2+)
+    # ============================================
+    log_info "Testing new hook events..."
+
+    assert_validation_passes "$VALIDATE" hooks \
+        '{"hooks":{"PostCompact":[{"hooks":[{"type":"command","command":"echo compacted"}]}]}}' \
+        "STRUCT-43: accept PostCompact hook event"
+
+    assert_validation_passes "$VALIDATE" hooks \
+        '{"hooks":{"InstructionsLoaded":[{"hooks":[{"type":"command","command":"echo loaded"}]}]}}' \
+        "STRUCT-44: accept InstructionsLoaded hook event"
+
+    assert_validation_passes "$VALIDATE" hooks \
+        '{"hooks":{"WorktreeCreate":[{"hooks":[{"type":"command","command":"echo /tmp/wt"}]}]}}' \
+        "STRUCT-45: accept WorktreeCreate hook event"
+
+    assert_validation_passes "$VALIDATE" hooks \
+        '{"hooks":{"WorktreeRemove":[{"hooks":[{"type":"command","command":"echo cleanup"}]}]}}' \
+        "STRUCT-46: accept WorktreeRemove hook event"
+
+    assert_validation_passes "$VALIDATE" hooks \
+        '{"hooks":{"Elicitation":[{"matcher":"myserver","hooks":[{"type":"command","command":"exit 0"}]}]}}' \
+        "STRUCT-47: accept Elicitation hook event"
+
+    assert_validation_passes "$VALIDATE" hooks \
+        '{"hooks":{"ElicitationResult":[{"hooks":[{"type":"command","command":"exit 0"}]}]}}' \
+        "STRUCT-48: accept ElicitationResult hook event"
+
+    # ============================================
+    # HTTP HOOK TYPE TESTS
+    # ============================================
+    log_info "Testing http hook type..."
+
+    assert_validation_passes "$VALIDATE" hooks \
+        '{"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"http","url":"https://example.com/hook"}]}]}}' \
+        "STRUCT-49: accept http hook type"
+
+    assert_validation_fails "$VALIDATE" hooks \
+        '{"hooks":{"PreToolUse":[{"hooks":[{"type":"http"}]}]}}' \
+        "STRUCT-50: reject http hook missing url"
+
+    # ============================================
+    # NEW TOOL VALIDATION TESTS
+    # ============================================
+    log_info "Testing new subagent tools..."
+
+    assert_validation_passes "$VALIDATE" subagent \
+        "$(printf -- '---\nname: test\ndescription: test\ntools: Agent, Read, Glob\n---\nContent')" \
+        "STRUCT-51: accept Agent tool in subagent"
+
+    assert_validation_passes "$VALIDATE" subagent \
+        "$(printf -- '---\nname: test\ndescription: test\ntools: TaskCreate, TaskUpdate, ToolSearch\n---\nContent')" \
+        "STRUCT-52: accept new task/search tools in subagent"
+
+    assert_validation_passes "$VALIDATE" subagent \
+        "$(printf -- '---\nname: test\ndescription: test\ntools: CronCreate, CronList, CronDelete\n---\nContent')" \
+        "STRUCT-53: accept Cron tools in subagent"
+
+    assert_validation_passes "$VALIDATE" subagent \
+        "$(printf -- '---\nname: test\ndescription: test\ntools: EnterWorktree, ExitWorktree, EnterPlanMode\n---\nContent')" \
+        "STRUCT-54: accept Worktree and PlanMode tools in subagent"
+
+    assert_validation_passes "$VALIDATE" subagent \
+        "$(printf -- '---\nname: test\ndescription: test\ntools: LSP, ListMcpResourcesTool, ReadMcpResourceTool\n---\nContent')" \
+        "STRUCT-55: accept LSP and MCP resource tools in subagent"
+
+    assert_validation_passes "$VALIDATE" subagent \
+        "$(printf -- '---\nname: test\ndescription: test\ntools: Agent(worker, researcher), Read\n---\nContent')" \
+        "STRUCT-56: accept Agent(type) syntax in subagent tools"
+
+    # ============================================
+    # NEW SUBAGENT FIELD VALIDATION TESTS
+    # ============================================
+    log_info "Testing new subagent frontmatter fields..."
+
+    assert_validation_passes "$VALIDATE" subagent \
+        "$(printf -- '---\nname: test\ndescription: test\nbackground: true\n---\nContent')" \
+        "STRUCT-57: accept background field in subagent"
+
+    assert_validation_passes "$VALIDATE" subagent \
+        "$(printf -- '---\nname: test\ndescription: test\nisolation: worktree\n---\nContent')" \
+        "STRUCT-58: accept isolation: worktree in subagent"
+
+    assert_validation_fails "$VALIDATE" subagent \
+        "$(printf -- '---\nname: test\ndescription: test\nisolation: docker\n---\nContent')" \
+        "STRUCT-59: reject invalid isolation value"
+
+    # ============================================
+    # NEW MCP SERVER TYPE TESTS
+    # ============================================
+    log_info "Testing http MCP server type..."
+
+    assert_validation_passes "$VALIDATE" mcp-servers \
+        '{"mcpServers":{"remote":{"type":"http","url":"https://mcp.example.com/mcp"}}}' \
+        "STRUCT-60: accept http MCP server type"
+
+    assert_validation_fails "$VALIDATE" mcp-servers \
+        '{"mcpServers":{"remote":{"type":"http"}}}' \
+        "STRUCT-61: reject http MCP server missing url"
+
+    # ============================================
+    # SKILL VALIDATION TESTS
+    # ============================================
+    log_info "Testing new skill frontmatter fields..."
+
+    assert_validation_passes "$VALIDATE" skill \
+        "$(printf -- '---\nname: test\ndescription: test\nuser-invocable: false\n---\nContent')" \
+        "STRUCT-62: accept user-invocable field in skill"
+
+    assert_validation_fails "$VALIDATE" skill \
+        "$(printf -- '---\nname: test\ndescription: test\nuser-invocable: maybe\n---\nContent')" \
+        "STRUCT-63: reject invalid user-invocable value"
+
+    # ============================================
+    # SCHEMA CONTENT TESTS
+    # ============================================
+    log_info "Testing schema contents are up-to-date..."
+
+    # Verify hooks schema has all 21 events
+    local hook_events=$(jq '.validEvents | length' "$PROJECT_ROOT/plugin/schemas/hooks.json")
+    if [ "$hook_events" -eq 21 ]; then
+        log_success "STRUCT-64: hooks schema has 21 events"
+    else
+        log_fail "STRUCT-64: hooks schema has $hook_events events (expected 21)"
+    fi
+
+    # Verify hooks schema has http type
+    assert_file_contains "$PROJECT_ROOT/plugin/schemas/hooks.json" \
+        '"http"' "STRUCT-65: hooks schema includes http type"
+
+    # Verify subagent schema has Agent tool
+    assert_file_contains "$PROJECT_ROOT/plugin/schemas/subagents.json" \
+        '"Agent"' "STRUCT-66: subagent schema includes Agent tool"
+
+    # Verify subagent schema has new fields
+    assert_file_contains "$PROJECT_ROOT/plugin/schemas/subagents.json" \
+        '"maxTurns"' "STRUCT-67: subagent schema has maxTurns field"
+
+    assert_file_contains "$PROJECT_ROOT/plugin/schemas/subagents.json" \
+        '"isolation"' "STRUCT-68: subagent schema has isolation field"
+
+    # Verify MCP schema has http type
+    assert_file_contains "$PROJECT_ROOT/plugin/schemas/mcp-servers.json" \
+        '"http"' "STRUCT-69: MCP schema includes http type"
+
+    # Verify skills schema has new fields
+    assert_file_contains "$PROJECT_ROOT/plugin/schemas/skills.json" \
+        '"user-invocable"' "STRUCT-70: skills schema has user-invocable field"
+
+    assert_file_contains "$PROJECT_ROOT/plugin/schemas/skills.json" \
+        '"allowed-tools"' "STRUCT-71: skills schema has allowed-tools field"
+
+    assert_file_contains "$PROJECT_ROOT/plugin/schemas/skills.json" \
+        '"agent"' "STRUCT-72: skills schema has agent field"
 }
 
 # ============================================
