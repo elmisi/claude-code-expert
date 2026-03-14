@@ -385,6 +385,62 @@ run_structure_tests() {
 
     assert_file_contains "$PROJECT_ROOT/plugin/schemas/skills.json" \
         '"agent"' "STRUCT-72: skills schema has agent field"
+
+    # ============================================
+    # JSON GUARD SCRIPT TESTS
+    # ============================================
+    log_info "Testing JSON config guard script..."
+
+    local GUARD="$PROJECT_ROOT/plugin/scripts/guard-json-config.sh"
+    chmod +x "$GUARD"
+
+    # Test: valid JSON Write to settings.json → allow
+    local result
+    result=$(echo '{"hook_event_name":"PreToolUse","tool_input":{"file_path":"/tmp/.claude/settings.json","content":"{\"hooks\":{}}"}}' | "$GUARD" 2>&1) && guard_exit=$? || guard_exit=$?
+    if [ "$guard_exit" -eq 0 ]; then
+        log_success "STRUCT-73: guard allows valid JSON write to settings.json"
+    else
+        log_fail "STRUCT-73: guard should allow valid JSON write (got exit $guard_exit)"
+    fi
+
+    # Test: invalid JSON Write to settings.json → block
+    result=$(echo '{"hook_event_name":"PreToolUse","tool_input":{"file_path":"/tmp/.claude/settings.json","content":"{\"hooks\":{},}"}}' | "$GUARD" 2>&1) && guard_exit=$? || guard_exit=$?
+    if [ "$guard_exit" -eq 2 ]; then
+        log_success "STRUCT-74: guard blocks invalid JSON write to settings.json"
+    else
+        log_fail "STRUCT-74: guard should block invalid JSON write (got exit $guard_exit)"
+    fi
+
+    # Test: any file Write that is NOT a config file → allow silently
+    result=$(echo '{"hook_event_name":"PreToolUse","tool_input":{"file_path":"/tmp/random.json","content":"not json"}}' | "$GUARD" 2>&1) && guard_exit=$? || guard_exit=$?
+    if [ "$guard_exit" -eq 0 ]; then
+        log_success "STRUCT-75: guard ignores non-config files"
+    else
+        log_fail "STRUCT-75: guard should ignore non-config files (got exit $guard_exit)"
+    fi
+
+    # Test: invalid JSON Write to .mcp.json → block
+    result=$(echo '{"hook_event_name":"PreToolUse","tool_input":{"file_path":"/tmp/project/.mcp.json","content":"{\"mcpServers\":{\"x\":{\"type\":\"stdio\"}},,}"}}' | "$GUARD" 2>&1) && guard_exit=$? || guard_exit=$?
+    if [ "$guard_exit" -eq 2 ]; then
+        log_success "STRUCT-76: guard blocks invalid JSON write to .mcp.json"
+    else
+        log_fail "STRUCT-76: guard should block invalid .mcp.json write (got exit $guard_exit)"
+    fi
+
+    # Test: invalid JSON Edit on settings.json → catch
+    mkdir -p /tmp/guard-test/.claude
+    echo '{"broken":}' > /tmp/guard-test/.claude/settings.json
+    result=$(echo '{"hook_event_name":"PostToolUse","tool_input":{"file_path":"/tmp/guard-test/.claude/settings.json"}}' | "$GUARD" 2>&1) && guard_exit=$? || guard_exit=$?
+    rm -rf /tmp/guard-test
+    if [ "$guard_exit" -eq 2 ]; then
+        log_success "STRUCT-77: guard catches invalid JSON after edit on settings.json"
+    else
+        log_fail "STRUCT-77: guard should catch invalid JSON after edit (got exit $guard_exit)"
+    fi
+
+    # Test: SKILL.md has guard hooks in frontmatter
+    assert_file_contains "$PROJECT_ROOT/plugin/skills/automate/SKILL.md" \
+        "guard-json-config.sh" "STRUCT-78: SKILL.md has JSON guard hooks"
 }
 
 # ============================================

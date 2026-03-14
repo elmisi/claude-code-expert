@@ -54,7 +54,7 @@ The marketplace.json version is used by Claude Code's plugin update system. If o
 ## Running Tests
 
 ```bash
-# Structure tests — fast, no Claude needed (72 tests, IDs: STRUCT-01..STRUCT-72)
+# Structure tests — fast, no Claude needed (78 tests, IDs: STRUCT-01..STRUCT-78)
 ./tests/scripts/run-tests.sh structure
 
 # Fixture tests — validates expected output structures, no Claude needed (IDs: TEST-01..TEST-06)

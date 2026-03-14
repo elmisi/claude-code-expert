@@ -2,6 +2,19 @@
 name: automate
 description: Expert advisor that helps decide and create the right Claude Code automation
 disable-model-invocation: true
+hooks:
+  PreToolUse:
+    - matcher: "Write"
+      hooks:
+        - type: command
+          command: "\"${CLAUDE_PLUGIN_ROOT}/scripts/guard-json-config.sh\""
+          statusMessage: "Validating JSON before write..."
+  PostToolUse:
+    - matcher: "Edit"
+      hooks:
+        - type: command
+          command: "\"${CLAUDE_PLUGIN_ROOT}/scripts/guard-json-config.sh\""
+          statusMessage: "Validating JSON after edit..."
 ---
 
 # Claude Code Automation
@@ -669,9 +682,15 @@ Use template from `plugin/templates/agent-team.json`.
 
 ---
 
-## Step 5: Validate before writing
+## Step 5: Validate before AND after writing
 
-Before creating any configuration file:
+### 5.1 Pre-write validation (automatic)
+
+This skill has built-in PreToolUse/PostToolUse hooks that automatically validate JSON before Write and after Edit operations on config files (settings.json, .mcp.json, .lsp.json, etc.). If the JSON is malformed, the write is **blocked** and you will see the jq error — fix the JSON and retry.
+
+### 5.2 Schema validation (manual)
+
+Before creating any configuration file, verify against schemas:
 
 1. **For hooks**: Verify event name is in the valid list
 2. **For hooks**: Verify structure has nested `hooks` array with `type` and `command`
@@ -679,9 +698,19 @@ Before creating any configuration file:
 4. **For subagents**: Verify tools and model are valid
 5. **For MCP servers**: Verify valid JSON, `mcpServers` key exists, each server has `type` and either `command` (stdio) or `url` (http/sse)
 6. **For LSP servers**: Verify valid JSON, each server has `command` and `languages` array
-7. **For Agent Teams**: Verify valid JSON, `name`/`description`/`agents` exist, each agent has `name` and `role`
+7. **For Agent Teams**: Verify valid JSON, `name`/`description`/`agents` exist, each agent has `name`
 
 If validation fails, show the error and do NOT create the file.
+
+### 5.3 Post-write confirmation (MANDATORY for JSON files)
+
+**After writing ANY JSON config file, ALWAYS run:**
+```bash
+jq . <file-path> > /dev/null
+```
+If this fails, the file is broken. Read it back, fix the JSON, and rewrite.
+
+**CRITICAL: A malformed JSON config file will silently break Claude Code — it won't start and gives no error. This is the single most important validation step.**
 
 ---
 
